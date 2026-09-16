@@ -49,6 +49,8 @@ const HelpHero: FC<HelpHeroProps> = () => {
             </div>
           </Link>
         </motion.div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         <Link to="/" className="inline-block mb-8">
@@ -93,7 +95,7 @@ const HelpHero: FC<HelpHeroProps> = () => {
             How can we help you today?
           </motion.h1>
 
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium"/>
 
 
           <p className="text-lg text-slate-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
