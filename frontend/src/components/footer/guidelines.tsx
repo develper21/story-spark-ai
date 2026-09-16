@@ -1,13 +1,14 @@
 
-import { Link } from "react-router-dom";
 import {
-    Handshake,
     Sparkles,
-    Smile,
-    Ban,
     Lightbulb,
-    FileText,
-    ArrowLeft,
+    MessageCircle,
+    GitPullRequestArrow,
+    Code2,
+    Accessibility,
+    Bug,
+    HeartHandshake,
+    type LucideIcon,
 } from "lucide-react";
 
 type GuidelineSection = {
@@ -117,7 +118,52 @@ const workflowSteps = [
 ];
 
 const Guidelines = () => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Community Guidelines</h1>
+          <p className="text-xl text-gray-600">Building a welcoming and productive community together</p>
+        </div>
 
+        <div className="grid gap-8 md:grid-cols-2">
+          {guidelineSections.map((section, index) => (
+            <div key={index} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <section.icon className="w-6 h-6 text-purple-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">{section.title}</h2>
+              </div>
+              <p className="text-gray-600 mb-4">{section.description}</p>
+              <ul className="space-y-2">
+                {section.points.map((point, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-gray-700">
+                    <span className="text-purple-500 mt-1">•</span>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Contribution Workflow</h2>
+          <ol className="space-y-3">
+            {workflowSteps.map((step, index) => (
+              <li key={index} className="flex items-start gap-3 text-gray-700">
+                <span className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+                  {index + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Guidelines;
