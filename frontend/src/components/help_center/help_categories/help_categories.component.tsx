@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { motion } from "framer-motion";
+import HelpCategoryCard from "../help_category_card/help_category_card.component";
 
 interface HelpCategory {
   title: string;
@@ -13,7 +14,7 @@ interface HelpCategoriesProps {
 
 const HelpCategories: FC<HelpCategoriesProps> = ({ categories }) => {
   return (
-    <section
+    <motion.section
       id="help-categories"
       className="scroll-mt-28 transition-colors duration-300"
     >
@@ -29,6 +30,8 @@ const HelpCategories: FC<HelpCategoriesProps> = ({ categories }) => {
         <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
           Browse support topics designed to help you quickly understand
           StorySparkAI features, workflows, and troubleshooting steps.
+        </p>
+      </div>
       <div className="text-center mb-10">
         
         <h2
