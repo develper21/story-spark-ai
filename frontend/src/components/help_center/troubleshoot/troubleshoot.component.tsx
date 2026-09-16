@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { motion } from "framer-motion";
+import TroubleshootCard from "../troubleshoot_card/troubleshoot_card.component";
 
 interface TroubleshootItem {
   title: string;
@@ -13,7 +14,7 @@ interface TroubleshootProps {
 
 const Troubleshoot: FC<TroubleshootProps> = ({ items }) => {
   return (
-    <section
+    <motion.section
       id="troubleshoot-section"
       className="scroll-mt-28 transition-colors duration-300"
     >
@@ -30,6 +31,9 @@ const Troubleshoot: FC<TroubleshootProps> = ({ items }) => {
         <p className="text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
           Diagnose and resolve common StorySparkAI issues quickly with guided
           troubleshooting steps and recommended fixes.
+        </p>
+      </div>
+
       <div className="text-center mb-10">
         
         <h2
