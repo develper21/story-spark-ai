@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm run build -w story-spark-ai-frontend"
   publish = "frontend/dist"
 
 [build.environment]
