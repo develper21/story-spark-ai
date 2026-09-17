@@ -33,7 +33,7 @@ const toggleBookmark = async (storyId: string, token: ITokenPayload) => {
     // Synchronize with Post.bookmarks array
     post.bookmarks = post.bookmarks || [];
     post.bookmarks = post.bookmarks.filter(
-      (uId) => uId && uId.toString() !== user._id.toString()
+      (uId: any) => uId && uId.toString() !== user._id.toString()
     );
     await post.save();
 
@@ -47,7 +47,7 @@ const toggleBookmark = async (storyId: string, token: ITokenPayload) => {
 
     // Synchronize with Post.bookmarks array
     post.bookmarks = post.bookmarks || [];
-    if (!post.bookmarks.some((uId) => uId && uId.toString() === user._id.toString())) {
+    if (!post.bookmarks.some((uId: any) => uId && uId.toString() === user._id.toString())) {
       post.bookmarks.push(user._id);
     }
     await post.save();
@@ -90,8 +90,8 @@ const getBookmarks = async (
 
   // Map to extract only the fully populated story objects, filtering out any orphaned references
   const bookmarkedStories = bookmarks
-    .map((b) => b.storyId)
-    .filter((story) => story !== null);
+    .map((b: any) => b.storyId)
+    .filter((story: any) => story !== null);
 
   return {
     meta: {
@@ -134,7 +134,7 @@ const deleteBookmark = async (storyId: string, token: ITokenPayload) => {
   if (deletedBookmark && post) {
     post.bookmarks = post.bookmarks || [];
     post.bookmarks = post.bookmarks.filter(
-      (uId) => uId && uId.toString() !== user._id.toString()
+      (uId: any) => uId && uId.toString() !== user._id.toString()
     );
     await post.save();
   }

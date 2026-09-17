@@ -39,7 +39,7 @@ const corsOrigins =
 // ── FIXED CORS MIDDLEWARE ENGINE (WITH CORRECTED SYNTAX BRACKETS) ──
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: any, callback: any) => {
       if (!origin || corsOrigins.includes(origin)) {
         callback(null, true);
       } else {

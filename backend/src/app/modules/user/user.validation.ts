@@ -17,7 +17,7 @@ const register = z.object({
     verificationToken: z
       .string({ required_error: "Verification token is required" })
       .min(1, "Verification token is required"),
-  }).refine((data) => data.password === data.confirmPassword, {
+  }).refine((data: any) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   }),

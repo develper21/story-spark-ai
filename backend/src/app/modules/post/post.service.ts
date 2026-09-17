@@ -114,7 +114,7 @@ const getPosts = async (
 
   if (Object.keys(filterData).length > 0) {
     andCondition.push({
-      $and: Object.entries(filterData).map(([field, value]) => ({
+      $and: Object.entries(filterData).map(([field, value]: [string, any]) => ({
         [field]: value,
       })),
     });

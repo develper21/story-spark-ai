@@ -83,7 +83,7 @@ const deleteUser = async (id: string): Promise<void> => {
 
   // Get all posts authored by this user
   const userPosts = await Post.find({ author: id }).select("_id").lean();
-  const postIds = userPosts.map((p) => p._id);
+  const postIds = userPosts.map((p: any) => p._id);
 
   // Delete story versions for user's posts
   await StoryVersion.deleteMany({ storyId: { $in: postIds } });
@@ -264,7 +264,7 @@ const getFollowStatus = async (token: ITokenPayload, authorId: string) => {
     return { isFollowing: false };
   }
   const isFollowing = currentUser.following.some(
-    (id) => id.toString() === authorId
+    (id: any) => id.toString() === authorId
   );
   return { isFollowing };
 };

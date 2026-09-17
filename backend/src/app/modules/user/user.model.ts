@@ -82,7 +82,7 @@ export const UserSchema: Schema<IUser> = new Schema<IUser, UserModel>(
   }
 );
 
-UserSchema.pre("save", async function (next) {
+UserSchema.pre("save", async function (next: any) {
   const user = this;
   if (!user.isModified("password")) {
     return next();

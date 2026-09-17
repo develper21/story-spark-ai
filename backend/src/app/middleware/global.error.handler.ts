@@ -11,7 +11,7 @@ import ApiError from "../../errors/api_error";
 import logger from "../../utils/logger.util";
 
 const globalErrorHandler: ErrorRequestHandler = (
-  err,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction

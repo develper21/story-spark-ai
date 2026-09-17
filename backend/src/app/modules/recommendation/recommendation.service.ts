@@ -26,14 +26,14 @@ const getPersonalizedRecommendations = async (token: ITokenPayload) => {
   // If user has preferences, try to match them
   if (readingPreferences) {
     const favoriteGenres = readingPreferences.favoriteGenres
-      .sort((a, b) => b.count - a.count)
+      .sort((a: any, b: any) => b.count - a.count)
       .slice(0, 3)
-      .map(g => g.name);
+      .map((g: any) => g.name);
       
     const favoriteEmotions = readingPreferences.favoriteEmotions
-      .sort((a, b) => b.count - a.count)
+      .sort((a: any, b: any) => b.count - a.count)
       .slice(0, 3)
-      .map(e => e.name);
+      .map((e: any) => e.name);
 
     if (favoriteGenres.length > 0 || favoriteEmotions.length > 0) {
       const orConditions = [];

@@ -6,7 +6,7 @@ const contactFeedbackTypes = [
   "general-feedback",
 ] as const;
 
-const optionalTrimmedString = z.preprocess((value) => {
+const optionalTrimmedString = z.preprocess((value: any) => {
   if (typeof value !== "string") {
     return undefined;
   }
@@ -16,7 +16,7 @@ const optionalTrimmedString = z.preprocess((value) => {
   return trimmedValue ? trimmedValue : undefined;
 }, z.string().optional());
 
-const optionalEmail = z.preprocess((value) => {
+const optionalEmail = z.preprocess((value: any) => {
   if (typeof value !== "string") {
     return undefined;
   }
@@ -27,7 +27,7 @@ const optionalEmail = z.preprocess((value) => {
 }, z.string().email("Invalid email address").optional());
 
 const requiredTrimmedString = (label: string) =>
-  z.preprocess((value) => {
+  z.preprocess((value: any) => {
     if (typeof value !== "string") {
       return value;
     }

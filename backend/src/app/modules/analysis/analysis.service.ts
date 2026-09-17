@@ -95,7 +95,7 @@ const getDashboardAnalysis = async (userId: string, role: string) => {
 
   if (role === ENUM_USER_ROLE.WRITER) {
     const writerPosts = await Post.find({ author: user._id, isDeleted: false });
-    const totalReaders = writerPosts.reduce((sum, p) => sum + (p.viewsCount || 0), 0);
+    const totalReaders = writerPosts.reduce((sum: number, p: any) => sum + (p.viewsCount || 0), 0);
     const totalPosts = writerPosts.length;
 
     // Monthly posts for this specific writer
