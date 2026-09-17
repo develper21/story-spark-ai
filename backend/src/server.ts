@@ -51,7 +51,7 @@ async function main() {
     setNotificationSocket(io);
     setupCollabSocket(io);
 
-    io.use((socket, next) => {
+    io.use((socket: any, next: any) => {
       try {
         const token = socket.handshake.auth?.token as string | undefined;
         if (!token) {
@@ -74,7 +74,7 @@ async function main() {
       }
     });
 
-    io.on("connection", (socket) => {
+    io.on("connection", (socket: any) => {
       const userId = socket.data.userId as string | undefined;
       if (userId) {
         socket.join(`user:${userId}`);

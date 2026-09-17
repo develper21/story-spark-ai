@@ -23,7 +23,7 @@ function loadKeys(): string[] {
   const raw = process.env.AI_API_KEYS ?? "";
   const keys = raw
     .split(",")
-    .map((k) => k.trim())
+    .map((k: string) => k.trim())
     .filter(Boolean);
 
   if (keys.length > 0) return keys;

@@ -65,9 +65,9 @@ ${payload.email || "Not provided"}
   };
 
   return new Promise<void>((resolve, reject) => {
-    const req = https.request(options, (res) => {
+    const req = https.request(options, (res: any) => {
       let data = "";
-      res.on("data", (chunk) => {
+      res.on("data", (chunk: any) => {
         data += chunk;
       });
       res.on("end", () => {
@@ -88,7 +88,7 @@ ${payload.email || "Not provided"}
       });
     });
 
-    req.on("error", (error) => {
+    req.on("error", (error: any) => {
       console.error("[GitHub Integration] Error calling GitHub API:", error);
       resolve(); // Resolve anyway to not block database submission
     });

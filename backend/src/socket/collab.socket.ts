@@ -55,7 +55,7 @@ function getColorForUser(index: number): string {
 export const setupCollabSocket = (io: Server) => {
   const collabNamespace = io.of("/collab");
 
-  collabNamespace.use((socket, next) => {
+  collabNamespace.use((socket: any, next: any) => {
     try {
       const token = socket.handshake.auth?.token as string | undefined;
       if (!token) return next(new Error("Unauthorized"));
@@ -98,7 +98,7 @@ export const setupCollabSocket = (io: Server) => {
     });
 
     // Join an existing room
-    socket.on("collab:join_room", ({ roomId }) => {
+    socket.on("collab:join_room", ({ roomId }: { roomId: string }) => {
       const pendingCleanup = cleanupTimeouts.get(roomId);
       if (pendingCleanup) {
         clearTimeout(pendingCleanup);
@@ -127,7 +127,7 @@ export const setupCollabSocket = (io: Server) => {
     });
 
     // User adds text to story
-    socket.on("collab:add_text", ({ roomId, text }) => {
+    socket.on("collab:add_text", ({ roomId, text }: { roomId: string; text: string }) => {
       const userId = socket.data.userId;
       const room = rooms.get(roomId);
       if (!room) return;
@@ -152,7 +152,7 @@ export const setupCollabSocket = (io: Server) => {
     });
 
     // AI continues the story
-    socket.on("collab:ai_continue", async ({ roomId }) => {
+    socket.on("collab:ai_continue", async ({ roomId }: { roomId: string }) => {
       const room = rooms.get(roomId);
       if (!room) return;
 
@@ -228,7 +228,7 @@ export const setupCollabSocket = (io: Server) => {
     });
 
     // Typing indicator
-    socket.on("collab:typing", ({ roomId }) => {
+    socket.on("collab:typing", ({ roomId }: { roomId: string }) => {
       const userId = socket.data.userId;
       const username = socket.data.username;
       const room = rooms.get(roomId);
@@ -237,7 +237,7 @@ export const setupCollabSocket = (io: Server) => {
       socket.to(roomId).emit("collab:user_typing", { userId, username });
     });
 
-    socket.on("collab:stop_typing", ({ roomId }) => {
+    socket.on("collab:stop_typing", ({ roomId }: { roomId: string }) => {
       const userId = socket.data.userId;
       const room = rooms.get(roomId);
       if (!room) return;
@@ -246,7 +246,7 @@ export const setupCollabSocket = (io: Server) => {
     });
 
     // Get room info
-    socket.on("collab:get_room", ({ roomId }) => {
+    socket.on("collab:get_room", ({ roomId }: { roomId: string }) => {
       const pendingCleanup = cleanupTimeouts.get(roomId);
       if (pendingCleanup) {
         clearTimeout(pendingCleanup);
