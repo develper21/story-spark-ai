@@ -191,27 +191,29 @@ const LoginComponent = () => {
 
           </form>
 
-          <div className="mt-6 relative">
+          {Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID) && (
+            <>
+              <div className="mt-6 relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                </div>
 
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                    OR
+                  </span>
+                </div>
+              </div>
 
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                OR
-              </span>
-            </div>
-
-          </div>
-
-          {/* Explicitly added list-none to prevent stray bullet point artifact on production build */}
-          <div className="mt-6 flex justify-center list-none">
-            <GoogleLogin
-              onSuccess={handleGoogleLoginSuccess}
-              onError={handleGoogleLoginError}
-            />
-          </div>
+              {/* Explicitly added list-none to prevent stray bullet point artifact on production build */}
+              <div className="mt-6 flex justify-center list-none">
+                <GoogleLogin
+                  onSuccess={handleGoogleLoginSuccess}
+                  onError={handleGoogleLoginError}
+                />
+              </div>
+            </>
+          )}
 
           <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
 

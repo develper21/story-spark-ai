@@ -26,26 +26,38 @@ app.use(limiter as any);
 
 
 const defaultCorsOrigins = [
+  "https://storyparksite.netlify.app",
+  "https://storysparkai.netlify.app",
+  "https://storysparkai.vercel.app",
   "http://localhost:4001",
   "http://localhost:4002",
-  "https://storysparkai.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
-const corsOrigins =
-  config.cors_origins && config.cors_origins.length > 0
-    ? config.cors_origins
-    : defaultCorsOrigins;
+const configuredOrigins = config.cors_origins || [];
+const allAllowedOrigins = [...new Set([...defaultCorsOrigins, ...configuredOrigins])];
 
-// ── FIXED CORS MIDDLEWARE ENGINE (WITH CORRECTED SYNTAX BRACKETS) ──
+export const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true;
+  if (allAllowedOrigins.includes(origin)) return true;
+  // Allow all Netlify and Vercel deployments (including branch/deploy previews)
+  if (/^https:\/\/.*\.netlify\.app$/.test(origin)) return true;
+  if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return true;
+  if (/^http:\/\/localhost:[0-9]+$/.test(origin)) return true;
+  return false;
+};
+
+// ── FIXED CORS MIDDLEWARE ENGINE ──
 app.use(
   cors({
     origin: (origin: any, callback: any) => {
-      if (!origin || corsOrigins.includes(origin)) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Blocked by Cross-Origin Resource Sharing (CORS) Policy"));
-      } // <-- Safely closed the else statement block here
-    },  // <-- Safely closed the origin function assignment here
+        callback(new Error(`Blocked by Cross-Origin Resource Sharing (CORS) Policy: ${origin}`));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Cookie"], 

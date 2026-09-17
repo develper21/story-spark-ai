@@ -1,7 +1,7 @@
 import { Application, Request, Response } from "express";
 import mongoose from "mongoose";
 import config from "./config";
-import app from "./app";
+import app, { isOriginAllowed } from "./app";
 import dns from "dns";
 import http from "http";
 import { Server } from "socket.io";
@@ -36,9 +36,13 @@ async function main() {
     const httpServer = http.createServer(app);
     const io = new Server(httpServer, {
       cors: {
-        origin: config.cors_origins?.length
-          ? config.cors_origins
-          : ["http://localhost:4001", "https://storysparkai.vercel.app"],
+        origin: (origin: any, callback: any) => {
+          if (isOriginAllowed(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error("CORS not allowed"), false);
+          }
+        },
         credentials: true,
       },
     });

@@ -27,7 +27,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: CORS_ORIGINS
-        value: https://storysparkai.netlify.app,http://localhost:4001
+        value: https://storyparksite.netlify.app,https://storysparkai.netlify.app,http://localhost:4001
       - key: EMAIL_SERVICE
         sync: false
       - key: EMAIL_USER

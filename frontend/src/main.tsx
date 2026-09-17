@@ -9,15 +9,22 @@ import { ThemeProvider } from "./components/theme/theme.context";
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
+const appContent = (
+  <Provider store={store}>
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
+  </Provider>
+);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <Provider store={store}>
-        <ThemeProvider>
-          <App />
-        </ThemeProvider>
-      </Provider>
-    </GoogleOAuthProvider>
+    {googleClientId ? (
+      <GoogleOAuthProvider clientId={googleClientId}>
+        {appContent}
+      </GoogleOAuthProvider>
+    ) : (
+      appContent
+    )}
   </StrictMode>
 );
