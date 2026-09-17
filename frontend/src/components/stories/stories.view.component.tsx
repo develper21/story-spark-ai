@@ -9,6 +9,7 @@ export interface IStories {
   tag: string;
   imageURL: string;
   genre?: string;
+  language?: string;
 }
 
 interface IRelatedStoriesComponentProps {
