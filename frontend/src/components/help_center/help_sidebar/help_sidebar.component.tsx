@@ -2,9 +2,10 @@ import { FC, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { HELP_SECTIONS } from "../help_center.utils";
 
+const SECTION_IDS = HELP_SECTIONS.map((section) => section.id);
+
 const HelpSidebar: FC = () => {
   const [activeSection, setActiveSection] = useState<string>("categories");
-  const sectionIds = HELP_SECTIONS.map((section) => section.id);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -23,7 +24,7 @@ const HelpSidebar: FC = () => {
       }
     );
 
-    sectionIds.forEach((id) => {
+    SECTION_IDS.forEach((id) => {
       const element = document.getElementById(id);
       if (element) observer.observe(element);
     });
@@ -39,7 +40,7 @@ const HelpSidebar: FC = () => {
     window.addEventListener("scroll", handleScroll);
 
     return () => {
-      sectionIds.forEach((id) => {
+      SECTION_IDS.forEach((id) => {
         const element = document.getElementById(id);
         if (element) {
           observer.unobserve(element);

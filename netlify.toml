@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  PNPM_FLAGS = "--no-frozen-lockfile"
   VITE_BASE_URL = "https://storyspark-service.onrender.com/api/v1"
   VITE_SOCKET_URL = "https://storyspark-service.onrender.com"
 

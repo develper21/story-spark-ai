@@ -25,15 +25,15 @@ type AuthUserInfo = {
   iat: number;
 };
 
-const buildUserInfo = (decodedData: any): AuthUserInfo => ({
-  email: decodedData.email || "",
-  userId: decodedData.userId || "",
-  name: decodedData.name || "",
-  postsCount: decodedData.postsCount || 0,
-  role: decodedData.role || "guest",
-  subscriptionType: decodedData.subscriptionType || "free",
-  exp: decodedData.exp || 0,
-  iat: decodedData.iat || 0,
+const buildUserInfo = (decodedData: Record<string, unknown>): AuthUserInfo => ({
+  email: String(decodedData.email || ""),
+  userId: String(decodedData.userId || ""),
+  name: String(decodedData.name || ""),
+  postsCount: Number(decodedData.postsCount) || 0,
+  role: String(decodedData.role || "guest"),
+  subscriptionType: String(decodedData.subscriptionType || "free"),
+  exp: Number(decodedData.exp) || 0,
+  iat: Number(decodedData.iat) || 0,
 });
 
 const getValidDecodedToken = () => {

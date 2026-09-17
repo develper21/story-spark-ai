@@ -66,10 +66,6 @@ interface IStoriesViewComponentProps {
 
 const StoriesViewComponent: React.FC<IStoriesViewComponentProps> = ({
   stories,
-  isLogin,
-  setStories,
-  onPublishSuccess,
-  isLoading,
 }) => {
   return (
     <div className="stories-container">

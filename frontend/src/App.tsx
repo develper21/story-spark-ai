@@ -73,7 +73,6 @@ const ProtectedRoute = ({ allowedRoles, element }: ProtectedRouteProps) => {
 // 2. CENTRAL ROUTER MATRIX (Initialized exactly once in the global scope)
 // =========================================================================
 const ALL_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER, USER_ROLE.USER];
-const ELEVATED_ADMIN_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN];
 
 const router = createBrowserRouter([
   {
@@ -93,9 +92,11 @@ const router = createBrowserRouter([
       { path: "writing-assistant", element: <WritingAssistantComponent /> },
       { path: "story-inspiration", element: <StoryInspirationWrapper /> },
       { path: "stories", element: <StoriesComponent /> },
+      { path: "branching-story", element: <BranchingStory /> },
       { path: "story-workspace", element: <StoryWorkspace /> },
       { path: "login", element: <LoginComponent /> },
       { path: "signup", element: <SignUpComponent /> },
+      { path: "forgot-password", element: <ForgotPasswordComponent /> },
       { path: "pricing", element: <PricingComponent /> },
       { path: "post/:id", element: <PostDetailsComponent /> },
       { path: "help", element: <HelpCenterComponent /> },
