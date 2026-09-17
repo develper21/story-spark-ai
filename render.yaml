@@ -3,6 +3,7 @@ services:
     name: story-spark-ai-backend
     env: node
     plan: free
+    rootDir: backend
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     envVars:

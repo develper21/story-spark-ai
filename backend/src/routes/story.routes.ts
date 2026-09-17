@@ -1,8 +1,8 @@
-import express from "express";
+import express, { Request, Response } from "express";
 
 const router = express.Router();
 
-router.post("/continue", async (req, res) => {
+router.post("/continue", async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
 
@@ -21,7 +21,7 @@ router.post("/continue", async (req, res) => {
 });
 // Add this new route to handle reviews
 // Since app.ts already adds "/review", the full path becomes "/review/create"
-router.post("/create", async (req, res) => {
+router.post("/create", async (req: Request, res: Response) => {
     try {
         console.log("Data received:", req.body);
         res.status(201).json({ message: "Review submitted successfully!" });

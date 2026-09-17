@@ -41,11 +41,11 @@ export async function fetchImageURL(
     if (!response.ok) {
       return { imageUrl: fallbackImage };
     }
-    const data = await response.json();
+    const data = (await response.json()) as any;
     return {
       imageUrl:
-        data.results && data.results.length > 0
-          ? data.results[0].urls.regular
+        data?.results && data.results.length > 0
+          ? data.results[0]?.urls?.regular || fallbackImage
           : fallbackImage,
     };
   } catch (error) {
