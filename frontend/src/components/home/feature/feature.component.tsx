@@ -12,6 +12,21 @@ import { FaXTwitter } from "react-icons/fa6";
 const FeatureComponent = () => {
   const { data, isLoading, isError, refetch } = useGetFeaturedListsQuery(undefined);
   const navigate = useNavigate();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const calculateReadingTime = (content: string): number => {
+    const wordsPerMinute = 200;
+    const wordCount = content.trim().split(/\s+/).length;
+    return Math.ceil(wordCount / wordsPerMinute);
+  };
+
+  const handleCopyLink = (e: React.MouseEvent, postId: string, url: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(postId);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
   if (isLoading) return <LoadingAnimation />;
   if (isError) {
     return (

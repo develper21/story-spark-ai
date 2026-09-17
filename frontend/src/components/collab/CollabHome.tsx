@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// Socket.IO collab disabled (see CollabRoom). Previous: io, Socket, resolveSocketUrl, BACKEND_URL.
+import { isLoggedIn, getUserInfo } from "../../services/auth.service";
 
 export default function CollabHome() {
   const navigate = useNavigate();
   const [joinRoomId, setJoinRoomId] = useState("");
   const [error, setError] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const user = getUserInfo();
 
   const createRoom = () => {
     if (!isLoggedIn()) {
@@ -15,28 +17,9 @@ export default function CollabHome() {
 
     try {
       setIsCreating(true);
-      const socket = connectSocket();
-      if (!socket) {
-        setError(
-          "Socket.IO connection failed. Please check VITE_SOCKET_URL in frontend/.env"
-        );
-        return;
-      }
-
-      const collabSocket = socket;
-
-      collabSocket.emit(
-        "collab:create_room",
-        { userId: user?.userId, username: user?.name },
-        (response: { roomId: string } | null) => {
-          if (response && response.roomId) {
-            navigate(`/collab/${response.roomId}`);
-          } else {
-            setError("Failed to create room. Please try again.");
-          }
-          setIsCreating(false);
-        }
-      );
+      // Generate a random room ID
+      const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+      navigate(`/collab/${roomId}`);
     } catch (err) {
       console.error("Create room error:", err);
       setError("Error creating room. Please try again.");

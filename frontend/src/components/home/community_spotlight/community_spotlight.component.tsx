@@ -59,6 +59,52 @@ const CommunitySpotlightComponent = () => {
   const { data, isLoading, isError, refetch } = useGetLatestListsQuery(undefined);
   const navigate = useNavigate();
 
+  const topWriters = useMemo(() => {
+    if (!data || !Array.isArray(data)) return [];
+
+    const writerMap = new Map<string, SpotlightWriter>();
+
+    data.forEach((post: Post) => {
+      const authorId = post.author._id || post.author.email;
+      if (!authorId) return;
+
+      const existing = writerMap.get(authorId);
+      const bookmarkCount = getBookmarkCount(post);
+      const postScore = getPostEngagementScore(post);
+
+      if (!existing || postScore > getPostEngagementScore(existing.topPost)) {
+        writerMap.set(authorId, {
+          author: post.author,
+          storiesCount: (existing?.storiesCount || 0) + 1,
+          likesCount: (existing?.likesCount || 0) + (post.likesCount ?? 0),
+          commentsCount: (existing?.commentsCount || 0) + (post.commentsCount ?? 0),
+          viewsCount: (existing?.viewsCount || 0) + (post.viewsCount ?? 0),
+          bookmarksCount: (existing?.bookmarksCount || 0) + bookmarkCount,
+          engagementScore: 0,
+          topPost: post,
+        });
+      } else {
+        writerMap.set(authorId, {
+          ...existing,
+          storiesCount: existing.storiesCount + 1,
+          likesCount: existing.likesCount + (post.likesCount ?? 0),
+          commentsCount: existing.commentsCount + (post.commentsCount ?? 0),
+          viewsCount: existing.viewsCount + (post.viewsCount ?? 0),
+          bookmarksCount: existing.bookmarksCount + bookmarkCount,
+        });
+      }
+    });
+
+    const writers = Array.from(writerMap.values()).map((writer) => ({
+      ...writer,
+      engagementScore: getWriterEngagementScore(writer),
+    }));
+
+    return writers
+      .sort((a, b) => b.engagementScore - a.engagementScore)
+      .slice(0, TOP_WRITERS_LIMIT);
+  }, [data]);
+
   if (isLoading) return <LoadingAnimation />;
   if (isError) {
     return (

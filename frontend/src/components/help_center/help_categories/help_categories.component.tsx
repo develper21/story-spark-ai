@@ -1,12 +1,7 @@
 import { FC } from "react";
 import { motion } from "framer-motion";
 import HelpCategoryCard from "../help_category_card/help_category_card.component";
-
-interface HelpCategory {
-  title: string;
-  description: string;
-  icon: string;
-}
+import { HelpCategory } from "../help_center.utils";
 
 interface HelpCategoriesProps {
   categories: HelpCategory[];

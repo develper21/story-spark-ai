@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import HelpSearchBar from "../help_search_bar/help_search_bar.component";
 
 interface HelpHeroProps {
   searchQuery?: string;
@@ -8,7 +9,7 @@ interface HelpHeroProps {
   resultCount?: number;
 }
 
-const HelpHero: FC<HelpHeroProps> = () => {
+const HelpHero: FC<HelpHeroProps> = ({ searchQuery = "", onSearchChange = () => {}, resultCount = 0 }) => {
   return (
     <section
       id="help-hero"

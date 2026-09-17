@@ -2,6 +2,15 @@ import React from "react";
 import { Post } from "../../models/post";
 import { useNavigate } from "react-router-dom";
 
+export interface IStories {
+  uuid: string;
+  title: string;
+  content: string;
+  tag: string;
+  imageURL: string;
+  genre?: string;
+}
+
 interface IRelatedStoriesComponentProps {
   posts: Post[],
   currentPostId: string;
@@ -46,4 +55,33 @@ const RelatedStoriesComponent: React.FC<IRelatedStoriesComponentProps> = ({
   );
 };
 
-export default RelatedStoriesComponent;
+interface IStoriesViewComponentProps {
+  stories: IStories[];
+  isLogin: boolean;
+  setStories: React.Dispatch<React.SetStateAction<IStories[]>>;
+  onPublishSuccess: () => void;
+  isLoading: boolean;
+}
+
+const StoriesViewComponent: React.FC<IStoriesViewComponentProps> = ({
+  stories,
+  isLogin,
+  setStories,
+  onPublishSuccess,
+  isLoading,
+}) => {
+  return (
+    <div className="stories-container">
+      {stories.map((story) => (
+        <div key={story.uuid} className="story-item">
+          {/* Story display logic here */}
+          <h3>{story.title}</h3>
+          <p>{story.content}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default StoriesViewComponent;
+export { RelatedStoriesComponent };

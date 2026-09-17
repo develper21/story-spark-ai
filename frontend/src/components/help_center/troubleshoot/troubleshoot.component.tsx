@@ -1,12 +1,7 @@
 import { FC } from "react";
 import { motion } from "framer-motion";
 import TroubleshootCard from "../troubleshoot_card/troubleshoot_card.component";
-
-interface TroubleshootItem {
-  title: string;
-  symptoms: string;
-  solution: string;
-}
+import { TroubleshootItem } from "../help_center.utils";
 
 interface TroubleshootProps {
   items: TroubleshootItem[];
