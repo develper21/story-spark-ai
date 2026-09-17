@@ -176,7 +176,7 @@ if (!token?._id) {
     { $limit: 10 },
   ]);
 
-  return result.map((r) => ({ genre: r._id, count: r.count }));
+  return result.map((r: any) => ({ genre: r._id, count: r.count }));
 };
 
 const getWordCloud = async (token: ITokenPayload | null) => {
@@ -189,7 +189,7 @@ const getWordCloud = async (token: ITokenPayload | null) => {
     .lean();
 
   const wordCount: Record<string, number> = {};
-  posts.forEach((p) => {
+  posts.forEach((p: any) => {
     const text = `${p.title} ${p.content}`.toLowerCase();
     const words = text.match(/\b[a-z]{4,}\b/g) || [];
     words.forEach((word) => {
@@ -261,7 +261,7 @@ const getEmotionDistribution = async (token: ITokenPayload) => {
     { $sort: { count: -1 } },
   ]);
 
-  return result.map((r) => ({ emotion: r._id, count: r.count }));
+  return result.map((r: any) => ({ emotion: r._id, count: r.count }));
 };
 
 const getMoodTimeline = async (token: ITokenPayload) => {
