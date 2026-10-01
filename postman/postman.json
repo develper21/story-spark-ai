@@ -1,0 +1,1820 @@
+{
+  "info": {
+    "_postman_id": "b7e1c2d3-4a5f-4e6b-9c8d-1a2b3c4d5e6f",
+    "name": "Story Spark AI — Complete API",
+    "description": "## Story Spark AI — Complete API Collection\n\nComplete, ready-to-run Postman collection covering **every backend route** of Story Spark AI (frontend + server).\n\n### Base URL\n| Environment | Value |\n|---|---|\n| Local Backend | `http://localhost:5000` |\n| API Prefix | `/api/v1` |\n\n### Authentication Flow (run in this order)\n1. **OTP Validation → Verify Email** — sends an OTP to the mailbox.\n2. **OTP Validation → Verify OTP** — returns a `verificationToken` (auto-saved to `{{verification_token}}`).\n3. **Auth → Register** — uses the verification token. Returns `accessToken` (auto-saved).\n4. **Auth → Login** — returns `accessToken` (auto-saved to `{{access_token}}`).\n5. All protected requests automatically use `{{access_token}}`.\n\n### Auth Header Format\nThe backend reads the JWT **directly** from the `Authorization` header — **no `Bearer ` prefix**:\n```\nAuthorization: eyJhbGciOiJIUzI1NiIs...\n```\n\n### Roles\n`user`, `writer`, `admin`, `super_admin` — role-protected routes are marked in each request description.\n\n### Response Envelope\nMost endpoints return:\n```json\n{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"...\",\n  \"meta\": { \"page\": 1, \"limit\": 10, \"total\": 100 },\n  \"data\": { }\n}\n```",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "story-spark-ai"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000", "type": "string" },
+    { "key": "api_path", "value": "/api/v1", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "refresh_token", "value": "", "type": "string" },
+    { "key": "verification_token", "value": "", "type": "string" },
+    { "key": "test_email", "value": "demo@storyspark.ai", "type": "string" },
+    { "key": "test_password", "value": "Spark@1234", "type": "string" },
+    { "key": "test_name", "value": "Demo Writer", "type": "string" },
+    { "key": "user_id", "value": "", "type": "string" },
+    { "key": "author_id", "value": "", "type": "string" },
+    { "key": "post_id", "value": "", "type": "string" },
+    { "key": "comment_id", "value": "", "type": "string" },
+    { "key": "story_id", "value": "", "type": "string" },
+    { "key": "version_id", "value": "", "type": "string" },
+    { "key": "review_id", "value": "", "type": "string" },
+    { "key": "notification_id", "value": "", "type": "string" },
+    { "key": "report_target_id", "value": "", "type": "string" },
+    { "key": "application_id", "value": "", "type": "string" },
+    { "key": "order_id", "value": "", "type": "string" },
+    { "key": "unsubscribe_token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "description": "Authentication module — login, register, Google OAuth, refresh tokens and password management.\n\nMount: `/api/v1/auth`",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"name\": \"{{test_name}}\",\n  \"password\": \"{{test_password}}\",\n  \"confirmPassword\": \"{{test_password}}\",\n  \"verificationToken\": \"{{verification_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "register"]
+            },
+            "description": "Register a new user. Password needs 8+ chars, upper, lower, number and special char. `verificationToken` comes from **Verify OTP**. Sets refresh-token cookie and returns `accessToken`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "  pm.collectionVariables.set('access_token', json.data.accessToken);",
+                  "  console.log('access_token saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "login"]
+            },
+            "description": "Login with email + password. Rate limited. Returns `accessToken`; refresh token is set as an httpOnly cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "  pm.collectionVariables.set('access_token', json.data.accessToken);",
+                  "  console.log('access_token saved — protected routes are now ready to run');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<google-id-token>\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/google-login",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "google-login"]
+            },
+            "description": "Exchange a Google OAuth ID token for a Story Spark session."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{refresh_token}}", "description": "Send the refresh token raw in the Authorization header" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "refresh-token"]
+            },
+            "description": "Rotate an expired access token. Pass the refresh token (raw) in the `Authorization` header."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "  pm.collectionVariables.set('access_token', json.data.accessToken);",
+                  "  console.log('access_token refreshed');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"{{test_password}}\",\n  \"newPassword\": \"NewSpark@1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "change-password"]
+            },
+            "description": "Change the logged-in user's password. Auth required (any role). Invalidates previous sessions."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "forgot-password"]
+            },
+            "description": "Send a password-reset OTP to the given email. Rate limited."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"NewSpark@1234\",\n  \"confirmPassword\": \"NewSpark@1234\",\n  \"verificationToken\": \"{{verification_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/auth/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "auth", "reset-password"]
+            },
+            "description": "Reset the password using the OTP verification token received from the forgot-password flow."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 OTP Validation (Verify Email)",
+      "description": "Email verification + OTP issuing before registration.\n\nMount: `/api/v1/otp_validation`",
+      "item": [
+        {
+          "name": "Verify Email (Send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"name\": \"{{test_name}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/otp_validation/verify-email",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "otp_validation", "verify-email"]
+            },
+            "description": "Sends a 6-digit OTP to the email. Run this before Verify OTP."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"otp\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/otp_validation/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "otp_validation", "verify-otp"]
+            },
+            "description": "Validates the OTP and returns a `verificationToken` used by **Register** / **Reset Password**. Max 5 failed attempts per OTP."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const data = json && json.data;",
+                  "if (data) {",
+                  "  const token = data.verificationToken || data.verification_token || data.token;",
+                  "  if (token) {",
+                  "    pm.collectionVariables.set('verification_token', token);",
+                  "    console.log('verification_token saved');",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 User",
+      "description": "User profile, admin user management, writer applications and follow system.\n\nMount: `/api/v1/user`",
+      "item": [
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/lists",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "lists"]
+            },
+            "description": "Full user list. **Roles:** admin, super_admin."
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/profile",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "profile"]
+            },
+            "description": "Profile of the authenticated user (reads JWT from Authorization header)."
+          }
+        },
+        {
+          "name": "Get Writer Application List (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/writer-application-list",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "writer-application-list"]
+            },
+            "description": "All users who applied for the writer role. **Roles:** admin, super_admin."
+          }
+        },
+        {
+          "name": "Get Single User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "{{user_id}}"]
+            },
+            "description": "Fetch one user by Mongo `_id`. Auth required (any role)."
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{test_name}}\",\n  \"profile\": {\n    \"avatar\": \"https://example.com/avatar.png\",\n    \"bio\": \"AI storytelling enthusiast.\",\n    \"social\": {\n      \"facebook\": \"https://facebook.com/storyspark\",\n      \"twitter\": \"https://twitter.com/storyspark\",\n      \"linkedin\": \"https://linkedin.com/in/storyspark\",\n      \"instagram\": \"https://instagram.com/storyspark\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/update",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "update"]
+            },
+            "description": "Update the authenticated user's name / avatar / bio / social links. All fields optional."
+          }
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "{{user_id}}"]
+            },
+            "description": "Delete a user account. **Roles:** admin, super_admin."
+          }
+        },
+        {
+          "name": "Apply For Writer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/apply-for-writer",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "apply-for-writer"]
+            },
+            "description": "Mark the current user as a writer applicant. **Role:** user."
+          }
+        },
+        {
+          "name": "Approve Writer Application (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/approve-writer-application",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "approve-writer-application"]
+            },
+            "description": "Promote an applicant to writer by email. **Roles:** admin, super_admin."
+          }
+        },
+        {
+          "name": "Follow / Unfollow Author",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/follow/{{author_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "follow", "{{author_id}}"]
+            },
+            "description": "Toggles follow state for the given author id. Auth required."
+          }
+        },
+        {
+          "name": "Get Follow Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/follow-status/{{author_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "follow-status", "{{author_id}}"]
+            },
+            "description": "Returns whether the authenticated user follows the given author."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 AI Model",
+      "description": "AI story generation endpoints — premium (quota monitored) and free (rate limited) variants, streaming, alternate endings, remix and translate.\n\nTone enum: `Dark`, `Humorous`, `Romantic`, `Epic`, `Mysterious`, `Children's`\nRemix types: `setting`, `perspective`, `time_period`, `tone`, `gender_swap`\n\nMount: `/api/v1/ai_model`",
+      "item": [
+        {
+          "name": "Generate Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"A lighthouse keeper discovers a message in a bottle from the future\",\n  \"wordLength\": 250,\n  \"numStories\": 2,\n  \"language\": \"English\",\n  \"tone\": \"Mysterious\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/generate-model",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "generate-model"]
+            },
+            "description": "Generate multiple story variations with Gemini/OpenAI. Consumes the user's monthly request quota."
+          }
+        },
+        {
+          "name": "Generate Story (Free)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"A robot barista gains consciousness during the morning rush\",\n  \"wordLength\": 200,\n  \"numStories\": 1,\n  \"language\": \"English\",\n  \"tone\": \"Humorous\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/generate-free-model",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "generate-free-model"]
+            },
+            "description": "Free-tier generation, no login or quota required. IP rate limited."
+          }
+        },
+        {
+          "name": "Generate Story (Stream)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Two strangers keep meeting at a train station at 3am\",\n  \"wordLength\": 250,\n  \"numStories\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/generate-model-stream",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "generate-model-stream"]
+            },
+            "description": "Server-Sent Events stream (`text/event-stream`). Chunks arrive as `data: {\"chunk\": \"...\"}` and end with `data: {\"done\": true}`."
+          }
+        },
+        {
+          "name": "Generate Alternate Endings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time as the storm swallowed the horizon...\",\n  \"tag\": \"Mystery\",\n  \"language\": \"English\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/generate-alternate-endings",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "generate-alternate-endings"]
+            },
+            "description": "Generate alternate endings for an existing story. Requires `title`, `content`, `tag`."
+          }
+        },
+        {
+          "name": "Generate Alternate Endings (Free)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time...\",\n  \"tag\": \"Mystery\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/generate-free-alternate-endings",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "generate-free-alternate-endings"]
+            },
+            "description": "Free alternate endings, no auth. IP rate limited."
+          }
+        },
+        {
+          "name": "Remix Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time...\",\n  \"tag\": \"Mystery\",\n  \"remixType\": \"setting\",\n  \"remixOption\": \"underwater city\",\n  \"language\": \"English\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/remix",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "remix"]
+            },
+            "description": "Remix a story by `setting`, `perspective`, `time_period`, `tone` or `gender_swap`."
+          }
+        },
+        {
+          "name": "Remix Story (Free)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp...\",\n  \"tag\": \"Mystery\",\n  \"remixType\": \"tone\",\n  \"remixOption\": \"Dark\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/remix-free",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "remix-free"]
+            },
+            "description": "Free remix, no auth. IP rate limited."
+          }
+        },
+        {
+          "name": "Translate Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time...\",\n  \"targetLanguage\": \"Hindi\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/translate",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "translate"]
+            },
+            "description": "Translate a story into `targetLanguage`."
+          }
+        },
+        {
+          "name": "Translate Story (Free)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp...\",\n  \"targetLanguage\": \"Spanish\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/ai_model/translate-free",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "ai_model", "translate-free"]
+            },
+            "description": "Free translation, no auth. IP rate limited."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Posts",
+      "description": "Story posts — publish, browse, feature, bookmark, remix and translate published stories.\n\nMount: `/api/v1/post`",
+      "item": [
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time as the storm swallowed the horizon and the bottle bobbed toward the rocks...\",\n  \"tag\": \"Mystery\",\n  \"imageURL\": \"https://images.unsplash.com/photo-1507525428034-b723cf961d3e\",\n  \"topic\": [\n    { \"title\": \"Mystery\", \"color\": \"#842bd2\", \"selected\": true },\n    { \"title\": \"Ocean\", \"color\": \"#d97722\", \"selected\": true }\n  ],\n  \"language\": \"English\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/create-post",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "create-post"]
+            },
+            "description": "Publish a story post. `title` min 3 chars, `content` min 10 chars, `imageURL` must be a valid URL, at least 2 topics. Auth required."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const data = json && json.data;",
+                  "if (data) {",
+                  "  const id = data._id || data.id;",
+                  "  if (id) {",
+                  "    pm.collectionVariables.set('post_id', id);",
+                  "    console.log('post_id saved:', id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post?page=1&limit=10&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "createdAt" },
+                { "key": "sortOrder", "value": "desc" },
+                { "key": "searchTerm", "value": "lighthouse", "disabled": true },
+                { "key": "tag", "value": "Mystery", "disabled": true },
+                { "key": "title", "value": "", "disabled": true },
+                { "key": "topic.title", "value": "Ocean", "disabled": true },
+                { "key": "genres", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Public paginated post feed with filters and search."
+          }
+        },
+        {
+          "name": "Get Latest Posts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/latest-posts",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "latest-posts"]
+            },
+            "description": "Most recent published posts (public)."
+          }
+        },
+        {
+          "name": "Get Featured Posts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/featured-posts",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "featured-posts"]
+            },
+            "description": "Editor's featured posts (public)."
+          }
+        },
+        {
+          "name": "Toggle Featured",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/featured/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "featured", "{{post_id}}"]
+            },
+            "description": "Toggle the featured flag on a post. Auth required."
+          }
+        },
+        {
+          "name": "Get Single Post",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/{{post_id}}?excludeId=",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "{{post_id}}"],
+              "query": [
+                { "key": "excludeId", "value": "", "description": "Optional: exclude this related post id", "disabled": true }
+              ]
+            },
+            "description": "Fetch one post by id (public)."
+          }
+        },
+        {
+          "name": "Get Posts By Tag",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/tag/Mystery",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "tag", "Mystery"]
+            },
+            "description": "All published posts under a tag (public)."
+          }
+        },
+        {
+          "name": "Toggle Bookmark",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/bookmark/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "bookmark", "{{post_id}}"]
+            },
+            "description": "Add/remove the post from the user's bookmarks. Auth required."
+          }
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Lighthouse Signal (Revised)\",\n  \"content\": \"The keeper lit the lamp one last time — but tonight the light answered back...\",\n  \"tag\": \"Mystery\",\n  \"imageURL\": \"https://images.unsplash.com/photo-1507525428034-b723cf961d3e\",\n  \"topic\": [\n    { \"title\": \"Mystery\", \"color\": \"#842bd2\", \"selected\": true },\n    { \"title\": \"Storm\", \"color\": \"#d97722\", \"selected\": true }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "{{post_id}}"]
+            },
+            "description": "Update a post. Auth required (author or admin roles)."
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "{{post_id}}"]
+            },
+            "description": "Soft-delete a post. Auth required."
+          }
+        },
+        {
+          "name": "Remix Published Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"{{post_id}}\",\n  \"prompt\": \"Rewrite this story in a cyberpunk city\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/remix",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "remix"]
+            },
+            "description": "AI-remix an existing published story. Auth required, quota monitored."
+          }
+        },
+        {
+          "name": "Translate Published Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"{{post_id}}\",\n  \"language\": \"Hindi\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post/translate",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "post", "translate"]
+            },
+            "description": "Translate a published story to another language. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Comments",
+      "description": "Comments on posts with threading and likes.\n\nMount: `/api/v1/comment`",
+      "item": [
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"{{post_id}}\",\n  \"comment\": \"What an ending — the bottle message gave me chills!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/comment/create",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "comment", "create"]
+            },
+            "description": "Comment on a post. Add `parentCommentId` to reply in a thread. Auth required."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const data = json && json.data;",
+                  "if (data) {",
+                  "  const id = data._id || data.id;",
+                  "  if (id) {",
+                  "    pm.collectionVariables.set('comment_id', id);",
+                  "    console.log('comment_id saved:', id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Comments By Post",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/comment/get-comments/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "comment", "get-comments", "{{post_id}}"]
+            },
+            "description": "All comments (with replies) for a post. Public."
+          }
+        },
+        {
+          "name": "Toggle Comment Like",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/comment/toggle-like/commentId={{comment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "comment", "toggle-like", "commentId={{comment_id}}"]
+            },
+            "description": "Like/unlike a comment. Note the unusual path format `commentId=<id>`. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Reviews",
+      "description": "Site testimonials — public listing, user submission, admin moderation.\n\nMount: `/api/v1/review`",
+      "item": [
+        {
+          "name": "Get Published Reviews",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/review/lists",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "review", "lists"]
+            },
+            "description": "Public list of approved reviews."
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Writer\",\n  \"role\": \"Storyteller\",\n  \"feedback\": \"Story Spark AI turned my one-line idea into a full world. The remix tool is pure magic!\",\n  \"imgSrc\": \"https://i.pravatar.cc/150?img=12\",\n  \"rating\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/review/create",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "review", "create"]
+            },
+            "description": "Submit a testimonial. `feedback` min 10 chars, `imgSrc` required, `rating` 1–5 optional. Creates a pending review."
+          }
+        },
+        {
+          "name": "Get Pending Reviews (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/review/pending",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "review", "pending"]
+            },
+            "description": "Reviews awaiting approval. **Roles:** admin, super_admin."
+          }
+        },
+        {
+          "name": "Approve Review (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/review/{{review_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "review", "{{review_id}}"]
+            },
+            "description": "Approve a pending review so it appears publicly. **Roles:** admin, super_admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Reactions",
+      "description": "Post reactions (likes/emoji).\n\nMount: `/api/v1/reaction`",
+      "item": [
+        {
+          "name": "Toggle Reaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"{{post_id}}\",\n  \"type\": \"like\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/reaction/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "reaction", "toggle"]
+            },
+            "description": "Toggle a reaction on a post. Returns the updated `likesCount`. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Notifications",
+      "description": "Realtime-backed user notifications (Socket.IO room `user:<id>`).\n\nMount: `/api/v1/notifications`",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "notifications"]
+            },
+            "description": "Notifications for the authenticated user. Auth required."
+          }
+        },
+        {
+          "name": "Mark As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/notifications/{{notification_id}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "notifications", "{{notification_id}}", "read"]
+            },
+            "description": "Mark one notification as read. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Bookmarks",
+      "description": "Dedicated bookmark module for saved stories.\n\nMount: `/api/v1/bookmarks`",
+      "item": [
+        {
+          "name": "Toggle Bookmark",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/bookmarks/{{story_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "bookmarks", "{{story_id}}"]
+            },
+            "description": "Add or remove a story bookmark. Auth required."
+          }
+        },
+        {
+          "name": "Get My Bookmarks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/bookmarks",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "bookmarks"]
+            },
+            "description": "All bookmarked stories of the current user. Auth required."
+          }
+        },
+        {
+          "name": "Check Bookmark Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/bookmarks/status/{{story_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "bookmarks", "status", "{{story_id}}"]
+            },
+            "description": "Is the given story bookmarked by the current user? Auth required."
+          }
+        },
+        {
+          "name": "Delete Bookmark",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/bookmarks/{{story_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "bookmarks", "{{story_id}}"]
+            },
+            "description": "Remove a bookmark directly. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Story Versions",
+      "description": "Version history for stories — snapshots, restore, and AI prompt enhancement.\n\nMount: `/api/v1/story`",
+      "item": [
+        {
+          "name": "Get Story Versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/story/{{story_id}}/versions",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "story", "{{story_id}}", "versions"]
+            },
+            "description": "All saved versions of a story. Auth required."
+          }
+        },
+        {
+          "name": "Get Version By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/story/version/{{version_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "story", "version", "{{version_id}}"]
+            },
+            "description": "One version snapshot. Auth required."
+          }
+        },
+        {
+          "name": "Restore Version",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/story/version/{{version_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "story", "version", "{{version_id}}", "restore"]
+            },
+            "description": "Restore a story to the given snapshot. Auth required."
+          }
+        },
+        {
+          "name": "Enhance Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"a cat detective in old delhi\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/story/enhance-prompt",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "story", "enhance-prompt"]
+            },
+            "description": "AI-enhance a story prompt. `prompt` min 3 chars. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Story Branching",
+      "description": "Branch a story from a selected choice.\n\nMount: `/api/v1/stories`",
+      "item": [
+        {
+          "name": "Create Branching Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storyContext\": \"The keeper climbed the spiral stairs, lamp in hand, while something knocked from inside the glass...\",\n  \"selectedChoice\": \"Open the lantern room door\",\n  \"genre\": \"Mystery\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/stories/branching",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "stories", "branching"]
+            },
+            "description": "Generate the next branch from `storyContext` + `selectedChoice`. `storyContext` max 8000 chars. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Story Continuation",
+      "description": "Continue an existing story with AI.\n\nMount: `/api/v1/story-continuation`",
+      "item": [
+        {
+          "name": "Continue Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"The keeper opened the lantern room and found a second lamp, already burning...\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/story-continuation/continue",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "story-continuation", "continue"]
+            },
+            "description": "Generate a continuation chapter from the given prompt. Returns `{ text }`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Story Inspiration",
+      "description": "Get AI sparks for story ideas from an intro line.\n\nMount: `/api/v1/story-inspiration`",
+      "item": [
+        {
+          "name": "Create Story Inspiration",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intro\": \"A cartographer who maps places that only exist at night\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/story-inspiration",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "story-inspiration"]
+            },
+            "description": "Generate idea sparks from an intro. `intro` required, max 1000 chars. Public."
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Analytics",
+      "description": "Platform/writer analytics widgets. First four endpoints work with or without a token; the last three require auth.\n\nMount: `/api/v1/analytics`",
+      "item": [
+        {
+          "name": "Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/overview",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "overview"]
+            },
+            "description": "Headline metrics (stories, posts, totals). Token optional."
+          }
+        },
+        {
+          "name": "Heatmap",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/heatmap",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "heatmap"]
+            },
+            "description": "Activity heatmap data. Token optional."
+          }
+        },
+        {
+          "name": "Genre Distribution",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/genres",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "genres"]
+            },
+            "description": "Genre distribution for charts. Token optional."
+          }
+        },
+        {
+          "name": "Word Cloud",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/wordcloud",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "wordcloud"]
+            },
+            "description": "Word cloud data. Token optional."
+          }
+        },
+        {
+          "name": "Productive Hours",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/productive-hours",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "productive-hours"]
+            },
+            "description": "Most productive writing hours. Auth required."
+          }
+        },
+        {
+          "name": "Emotion Distribution",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/emotion-distribution",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "emotion-distribution"]
+            },
+            "description": "Emotion analysis across stories. Auth required."
+          }
+        },
+        {
+          "name": "Mood Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analytics/mood-timeline",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analytics", "mood-timeline"]
+            },
+            "description": "Mood over time. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Analysis",
+      "description": "Dashboard analysis endpoint.\n\nMount: `/api/v1/analysis`",
+      "item": [
+        {
+          "name": "Get Dashboard Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/analysis/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "analysis", "dashboard"]
+            },
+            "description": "Aggregated dashboard analysis for the user. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 Recommendations",
+      "description": "Personalized story recommendations.\n\nMount: `/api/v1/recommendations`",
+      "item": [
+        {
+          "name": "Get Personalized Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/recommendations/personalized",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "recommendations", "personalized"]
+            },
+            "description": "Stories recommended for the current user based on their activity. Auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 Newsletter",
+      "description": "Newsletter subscribe / verify / unsubscribe.\n\nMount: `/api/v1/newsletter`",
+      "item": [
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reader@example.com\",\n  \"name\": \"Avid Reader\",\n  \"source\": \"footer\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/newsletter/subscribe",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "newsletter", "subscribe"]
+            },
+            "description": "Subscribe an email. Duplicate emails return 409."
+          }
+        },
+        {
+          "name": "Verify Subscription",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/newsletter/verify/{{unsubscribe_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "newsletter", "verify", "{{unsubscribe_token}}"]
+            },
+            "description": "Confirm a subscription with the token emailed to the subscriber."
+          }
+        },
+        {
+          "name": "Unsubscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reader@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/newsletter/unsubscribe",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "newsletter", "unsubscribe"]
+            },
+            "description": "Unsubscribe directly by email."
+          }
+        },
+        {
+          "name": "Generate Unsubscribe Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reader@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/newsletter/unsubscribe-token",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "newsletter", "unsubscribe-token"]
+            },
+            "description": "Generate a one-click unsubscribe token for an email."
+          }
+        },
+        {
+          "name": "Unsubscribe By Token",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/newsletter/unsubscribe/{{unsubscribe_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "newsletter", "unsubscribe", "{{unsubscribe_token}}"]
+            },
+            "description": "One-click unsubscribe via emailed token link."
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 Contact",
+      "description": "Contact / feedback form.\n\nfeedbackType: `bug-report`, `feature-request`, `general-feedback`\n\nMount: `/api/v1/contact`",
+      "item": [
+        {
+          "name": "Submit Contact Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Demo Writer\",\n  \"email\": \"demo@storyspark.ai\",\n  \"feedbackType\": \"feature-request\",\n  \"subject\": \"Collaborative writing rooms\",\n  \"message\": \"It would be amazing to co-write stories in real time with friends.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/contact",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "contact"]
+            },
+            "description": "Public contact form. `subject` and `message` required; `fullname`/`email` optional."
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 Reports",
+      "description": "Content moderation reports.\n\ntargetType: `POST`, `COMMENT`\nreason: `SPAM`, `HATE_SPEECH`, `INAPPROPRIATE`, `MISINFORMATION`, `OTHER`\n\nMount: `/api/v1/reports`",
+      "item": [
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetId\": \"{{report_target_id}}\",\n  \"targetType\": \"POST\",\n  \"reason\": \"SPAM\",\n  \"description\": \"This story is copy-pasted advertising.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "reports"]
+            },
+            "description": "Report a post or comment. Auth required."
+          }
+        },
+        {
+          "name": "Get All Reports (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "reports"]
+            },
+            "description": "Moderation queue. **Roles:** admin, super_admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 Bug Reports",
+      "description": "Public bug report submission (also creates a GitHub issue server-side).\n\nMount: `/api/v1/bug-reports`",
+      "item": [
+        {
+          "name": "Submit Bug Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Story editor loses draft on refresh\",\n  \"category\": \"Editor\",\n  \"severity\": \"High\",\n  \"description\": \"Draft text disappears when the page reloads before saving.\",\n  \"steps\": \"1. Type a story\\n2. Refresh the page\\n3. Draft is gone\",\n  \"expected\": \"Draft should persist locally until saved.\",\n  \"actual\": \"Draft is cleared on refresh.\",\n  \"email\": \"demo@storyspark.ai\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/bug-reports/submit",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "bug-reports", "submit"]
+            },
+            "description": "Submit a structured bug report. All fields required except `email`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 Writer Applications",
+      "description": "Writer application pipeline — submit (user), review + approve/reject (admin).\n\nMount: `/api/v1/writer-applications`",
+      "item": [
+        {
+          "name": "Submit Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"portfolioLink\": \"https://demo-writer.medium.com\",\n  \"reason\": \"I have published 20 short stories and want to contribute to Story Spark AI.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/writer-applications",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "writer-applications"]
+            },
+            "description": "Submit a writer application. `portfolioLink` must be a valid URL, `reason` min 10 chars. **Role:** user."
+          }
+        },
+        {
+          "name": "Get All Applications (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/writer-applications",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "writer-applications"]
+            },
+            "description": "All submitted applications. **Roles:** admin, super_admin."
+          }
+        },
+        {
+          "name": "Update Application Status (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/writer-applications/{{application_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "writer-applications", "{{application_id}}"]
+            },
+            "description": "Approve or reject an application. `status`: `approved` | `rejected`. **Roles:** admin, super_admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "23 Payment",
+      "description": "Razorpay checkout — create order and verify signature.\n\nMount: `/api/v1/payment`",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 499\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/payment/create-order",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "payment", "create-order"]
+            },
+            "description": "Create a Razorpay order. `amount` in INR (number, > 0). Auth required. Save `order.id` into `{{order_id}}` for the verify step."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json && json.order && json.order.id) {",
+                  "  pm.collectionVariables.set('order_id', json.order.id);",
+                  "  console.log('order_id saved:', json.order.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"{{order_id}}\",\n  \"razorpay_payment_id\": \"pay_TEST123456789\",\n  \"razorpay_signature\": \"<hmac-sha256-signature>\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/payment/verify",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "payment", "verify"]
+            },
+            "description": "Verify the Razorpay HMAC-SHA256 signature (`order_id|payment_id`). Auth required. Signature mismatch returns 400."
+          }
+        }
+      ]
+    },
+    {
+      "name": "24 Sanity Checks",
+      "description": "Quick health-style checks for the API surface itself.",
+      "item": [
+        {
+          "name": "404 Fallback",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/definitely-not-a-route",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "definitely-not-a-route"]
+            },
+            "description": "Any unknown route must return the global 404 envelope: `success: false`, `message: \"Not Found\"`, `errorMessage[].message: \"API Not Found\"`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test('Global 404 envelope', function () {",
+                  "  pm.expect(json.success).to.eql(false);",
+                  "  pm.expect(json.message).to.eql('Not Found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unauthorized Guard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/user/profile",
+              "host": ["{{base_url}}"],
+              "path": ["{{api_path}}", "user", "profile"]
+            },
+            "description": "Protected route without a token must return 401 `You are not authorized to access`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
