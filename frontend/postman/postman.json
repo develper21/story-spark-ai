@@ -1,0 +1,644 @@
+{
+  "info": {
+    "_postman_id": "c8f2d3e4-5b6a-4f7c-8d9e-2b3c4d5e6f70",
+    "name": "Story Spark AI — Frontend Routes",
+    "description": "## Frontend → Backend API Collection\n\nEvery REST endpoint the **React frontend** (`frontend/`) consumes, grouped exactly by the modules it imports. Import this into Postman and run the auth chain first.\n\n### Frontend Env Vars\n| Var | Used For |\n|---|---|\n| `VITE_BASE_URL` | REST API base (`http://localhost:5000/api/v1`) |\n| `VITE_SOCKET_URL` | Socket.IO server (notifications + collab) |\n| `VITE_GOOGLE_CLIENT_ID` | Google OAuth login |\n\n### Auth Header\nThe axios instance (`frontend/src/helpers/axios/axionInstance.ts`) sends the **raw access token** — no `Bearer ` prefix:\n```\nAuthorization: eyJhbGciOiJIUzI1NiIs...\n```\nThis collection does the same.\n\n### Run Order\n1. **OTP Validation → Verify Email** (get OTP in mail)\n2. **OTP Validation → Verify OTP** → saves `{{verification_token}}`\n3. **Auth → Register** or **Auth → Login** → saves `{{access_token}}`\n4. Everything else runs in any order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000", "type": "string" },
+    { "key": "api_path", "value": "/api/v1", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "verification_token", "value": "", "type": "string" },
+    { "key": "test_email", "value": "demo@storyspark.ai", "type": "string" },
+    { "key": "test_password", "value": "Spark@1234", "type": "string" },
+    { "key": "test_name", "value": "Demo Writer", "type": "string" },
+    { "key": "post_id", "value": "", "type": "string" },
+    { "key": "user_id", "value": "", "type": "string" },
+    { "key": "author_id", "value": "", "type": "string" },
+    { "key": "comment_id", "value": "", "type": "string" },
+    { "key": "story_id", "value": "", "type": "string" },
+    { "key": "notification_id", "value": "", "type": "string" },
+    { "key": "order_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth (Login · Register · OAuth)",
+      "description": "Powers the Login / Signup pages and `frontend/src/services/auth.service.ts` (stores the JWT in localStorage).",
+      "item": [
+        {
+          "name": "Register (Signup page)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"name\": \"{{test_name}}\",\n  \"password\": \"{{test_password}}\",\n  \"confirmPassword\": \"{{test_password}}\",\n  \"verificationToken\": \"{{verification_token}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/register", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "register"] },
+            "description": "Signup page submit. Password: 8+ chars with upper, lower, number, special."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "if (j?.data?.accessToken) pm.collectionVariables.set('access_token', j.data.accessToken);"
+          ] } }]
+        },
+        {
+          "name": "Login (Login page)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/login", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "login"] },
+            "description": "Login page submit → `accessToken` saved to collection, mirrors `storeUserInfo()`."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "if (j?.data?.accessToken) pm.collectionVariables.set('access_token', j.data.accessToken);"
+          ] } }]
+        },
+        {
+          "name": "Google Login (OAuth button)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"<google-id-token>\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/google-login", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "google-login"] },
+            "description": "Continue-with-Google button exchanges the Google ID token for a session."
+          }
+        },
+        {
+          "name": "Forgot Password (Forgot page)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/forgot-password", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "forgot-password"] },
+            "description": "Forgot-password page — emails an OTP."
+          }
+        },
+        {
+          "name": "Reset Password (Forgot page step 2)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"NewSpark@1234\",\n  \"confirmPassword\": \"NewSpark@1234\",\n  \"verificationToken\": \"{{verification_token}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/reset-password", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "reset-password"] },
+            "description": "Second step of forgot-password with the OTP-derived verification token."
+          }
+        },
+        {
+          "name": "Change Password (Settings)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"oldPassword\": \"{{test_password}}\",\n  \"newPassword\": \"NewSpark@1234\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/change-password", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "change-password"] },
+            "description": "Change password from account settings. Auth required."
+          }
+        },
+        {
+          "name": "Refresh Token (silent re-auth)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "{{access_token}}" }],
+            "url": { "raw": "{{base_url}}{{api_path}}/auth/refresh-token", "host": ["{{base_url}}"], "path": ["{{api_path}}", "auth", "refresh-token"] },
+            "description": "Rotate access token when the JWT expires."
+          }
+        }
+      ]
+    },
+    {
+      "name": "OTP Validation (Signup email verify)",
+      "description": "The signup flow verifies the email with an OTP before registering.",
+      "item": [
+        {
+          "name": "Verify Email (send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"name\": \"{{test_name}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/otp_validation/verify-email", "host": ["{{base_url}}"], "path": ["{{api_path}}", "otp_validation", "verify-email"] },
+            "description": "Signup step 1 — OTP lands in the mailbox."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"otp\": \"123456\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/otp_validation/verify-otp", "host": ["{{base_url}}"], "path": ["{{api_path}}", "otp_validation", "verify-otp"] },
+            "description": "Signup step 2 — saves `{{verification_token}}` for the register call."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const j = pm.response.json();",
+            "const d = j?.data || {};",
+            "const t = d.verificationToken || d.verification_token || d.token;",
+            "if (t) pm.collectionVariables.set('verification_token', t);"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "AI Story Generation (Generator page)",
+      "description": "The main story generator studio — premium, free and streaming generation plus endings / remix / translate.",
+      "item": [
+        {
+          "name": "Generate Stories",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"prompt\": \"A lighthouse keeper discovers a message in a bottle from the future\",\n  \"wordLength\": 250,\n  \"numStories\": 2,\n  \"language\": \"English\",\n  \"tone\": \"Mysterious\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/generate-model", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "generate-model"] },
+            "description": "Main generator — logged-in users, quota monitored. Tones: Dark / Humorous / Romantic / Epic / Mysterious / Children's."
+          }
+        },
+        {
+          "name": "Generate Stories (Free trial)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"prompt\": \"A robot barista gains consciousness during the morning rush\",\n  \"wordLength\": 200,\n  \"numStories\": 1,\n  \"tone\": \"Humorous\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/generate-free-model", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "generate-free-model"] },
+            "description": "Free generator — no login. IP rate limited."
+          }
+        },
+        {
+          "name": "Generate Stories (Streaming)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"prompt\": \"Two strangers keep meeting at a train station at 3am\",\n  \"wordLength\": 250,\n  \"numStories\": 2\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/generate-model-stream", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "generate-model-stream"] },
+            "description": "SSE stream — chunks: `data: {\"chunk\":\"...\"}`, end: `data: {\"done\":true}`."
+          }
+        },
+        {
+          "name": "Generate Alternate Endings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time as the storm swallowed the horizon...\",\n  \"tag\": \"Mystery\",\n  \"language\": \"English\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/generate-alternate-endings", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "generate-alternate-endings"] },
+            "description": "Alternate endings from the story viewer."
+          }
+        },
+        {
+          "name": "Generate Alternate Endings (Free)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp...\",\n  \"tag\": \"Mystery\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/generate-free-alternate-endings", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "generate-free-alternate-endings"] },
+            "description": "Free-tier alternate endings."
+          }
+        },
+        {
+          "name": "Remix Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time...\",\n  \"tag\": \"Mystery\",\n  \"remixType\": \"setting\",\n  \"remixOption\": \"underwater city\",\n  \"language\": \"English\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/remix", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "remix"] },
+            "description": "Remix types: setting / perspective / time_period / tone / gender_swap."
+          }
+        },
+        {
+          "name": "Remix Story (Free)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp...\",\n  \"tag\": \"Mystery\",\n  \"remixType\": \"tone\",\n  \"remixOption\": \"Dark\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/remix-free", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "remix-free"] },
+            "description": "Free remix."
+          }
+        },
+        {
+          "name": "Translate Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time...\",\n  \"targetLanguage\": \"Hindi\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/translate", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "translate"] },
+            "description": "Translate a story to `targetLanguage`."
+          }
+        },
+        {
+          "name": "Translate Story (Free)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp...\",\n  \"targetLanguage\": \"Spanish\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/ai_model/translate-free", "host": ["{{base_url}}"], "path": ["{{api_path}}", "ai_model", "translate-free"] },
+            "description": "Free translation."
+          }
+        },
+        {
+          "name": "Story Inspiration (idea sparks)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"intro\": \"A cartographer who maps places that only exist at night\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/story-inspiration", "host": ["{{base_url}}"], "path": ["{{api_path}}", "story-inspiration"] },
+            "description": "Idea sparks from an intro line (max 1000 chars). Public."
+          }
+        },
+        {
+          "name": "Enhance Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"prompt\": \"a cat detective in old delhi\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/story/enhance-prompt", "host": ["{{base_url}}"], "path": ["{{api_path}}", "story", "enhance-prompt"] },
+            "description": "Magic-wand prompt enhancer in the generator (min 3 chars)."
+          }
+        },
+        {
+          "name": "Continue Story",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"prompt\": \"The keeper opened the lantern room and found a second lamp, already burning...\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/story-continuation/continue", "host": ["{{base_url}}"], "path": ["{{api_path}}", "story-continuation", "continue"] },
+            "description": "Chapter continuation (returns `{ text }`)."
+          }
+        },
+        {
+          "name": "Branch Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"storyContext\": \"The keeper climbed the spiral stairs, lamp in hand, while something knocked from inside the glass...\",\n  \"selectedChoice\": \"Open the lantern room door\",\n  \"genre\": \"Mystery\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/stories/branching", "host": ["{{base_url}}"], "path": ["{{api_path}}", "stories", "branching"] },
+            "description": "Branching narrative — storyContext max 8000 chars."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stories (Home Feed · Details)",
+      "description": "The public story feed and post details page.",
+      "item": [
+        {
+          "name": "Get All Stories (feed)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/post?page=1&limit=10&sortBy=createdAt&sortOrder=desc",
+              "host": ["{{base_url}}"], "path": ["{{api_path}}", "post"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "createdAt" },
+                { "key": "sortOrder", "value": "desc" },
+                { "key": "searchTerm", "value": "lighthouse", "disabled": true },
+                { "key": "tag", "value": "Mystery", "disabled": true }
+              ]
+            },
+            "description": "Home page story feed with pagination + filters."
+          }
+        },
+        {
+          "name": "Get Latest Stories",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}{{api_path}}/post/latest-posts", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "latest-posts"] }, "description": "Latest posts row." }
+        },
+        {
+          "name": "Get Featured Stories",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}{{api_path}}/post/featured-posts", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "featured-posts"] }, "description": "Featured carousel." }
+        },
+        {
+          "name": "Get Story Details",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}{{api_path}}/post/{{post_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "{{post_id}}"] }, "description": "Story details page (public)." }
+        },
+        {
+          "name": "Get Stories By Tag",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}{{api_path}}/post/tag/Mystery", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "tag", "Mystery"] }, "description": "Tag pages." }
+        },
+        {
+          "name": "Create Story (publish)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal\",\n  \"content\": \"The keeper lit the lamp one last time as the storm swallowed the horizon and the bottle bobbed toward the rocks...\",\n  \"tag\": \"Mystery\",\n  \"imageURL\": \"https://images.unsplash.com/photo-1507525428034-b723cf961d3e\",\n  \"topic\": [\n    { \"title\": \"Mystery\", \"color\": \"#842bd2\", \"selected\": true },\n    { \"title\": \"Ocean\", \"color\": \"#d97722\", \"selected\": true }\n  ],\n  \"language\": \"English\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/post/create-post", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "create-post"] },
+            "description": "Publish a generated story. Needs 2+ topics, valid imageURL."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const j = pm.response.json();",
+            "const id = j?.data?._id || j?.data?.id;",
+            "if (id) pm.collectionVariables.set('post_id', id);"
+          ] } }]
+        },
+        {
+          "name": "Update Story",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Lighthouse Signal (Revised)\",\n  \"content\": \"The keeper lit the lamp one last time — but tonight the light answered back...\",\n  \"tag\": \"Mystery\",\n  \"imageURL\": \"https://images.unsplash.com/photo-1507525428034-b723cf961d3e\",\n  \"topic\": [\n    { \"title\": \"Mystery\", \"color\": \"#842bd2\", \"selected\": true },\n    { \"title\": \"Storm\", \"color\": \"#d97722\", \"selected\": true }\n  ]\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/post/{{post_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "{{post_id}}"] },
+            "description": "Edit a published story."
+          }
+        },
+        {
+          "name": "Delete Story",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/post/{{post_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "post", "{{post_id}}"] }, "description": "Remove a story." }
+        }
+      ]
+    },
+    {
+      "name": "Engagement (Likes · Comments · Reviews)",
+      "description": "Reader interactions across stories.",
+      "item": [
+        {
+          "name": "Toggle Like / Reaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"postId\": \"{{post_id}}\",\n  \"type\": \"like\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/reaction/toggle", "host": ["{{base_url}}"], "path": ["{{api_path}}", "reaction", "toggle"] },
+            "description": "Heart button. Returns updated `likesCount`."
+          }
+        },
+        {
+          "name": "Post a Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"postId\": \"{{post_id}}\",\n  \"comment\": \"What an ending — the bottle message gave me chills!\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/comment/create", "host": ["{{base_url}}"], "path": ["{{api_path}}", "comment", "create"] },
+            "description": "Comment box. Add `parentCommentId` for replies."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const j = pm.response.json();",
+            "const id = j?.data?._id || j?.data?.id;",
+            "if (id) pm.collectionVariables.set('comment_id', id);"
+          ] } }]
+        },
+        {
+          "name": "Get Comments for Story",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}{{api_path}}/comment/get-comments/{{post_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "comment", "get-comments", "{{post_id}}"] }, "description": "Comment thread (public)." }
+        },
+        {
+          "name": "Like a Comment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "{{access_token}}" }],
+            "url": { "raw": "{{base_url}}{{api_path}}/comment/toggle-like/commentId={{comment_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "comment", "toggle-like", "commentId={{comment_id}}"] },
+            "description": "Toggle like on a comment. Note the `commentId=<id>` path segment."
+          }
+        },
+        {
+          "name": "Submit Testimonial (review)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Demo Writer\",\n  \"role\": \"Storyteller\",\n  \"feedback\": \"Story Spark AI turned my one-line idea into a full world. The remix tool is pure magic!\",\n  \"imgSrc\": \"https://i.pravatar.cc/150?img=12\",\n  \"rating\": 5\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/review/create", "host": ["{{base_url}}"], "path": ["{{api_path}}", "review", "create"] },
+            "description": "Reviews section submission — goes to pending until admin approves."
+          }
+        },
+        {
+          "name": "Get Published Reviews",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}{{api_path}}/review/lists", "host": ["{{base_url}}"], "path": ["{{api_path}}", "review", "lists"] }, "description": "Approved testimonials on the landing page." }
+        }
+      ]
+    },
+    {
+      "name": "Profile & Social (Dashboard)",
+      "description": "User dashboard — profile, follows, analytics, recommendations, notifications, version history.",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/user/profile", "host": ["{{base_url}}"], "path": ["{{api_path}}", "user", "profile"] }, "description": "Dashboard profile card." }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{test_name}}\",\n  \"profile\": {\n    \"avatar\": \"https://example.com/avatar.png\",\n    \"bio\": \"AI storytelling enthusiast.\",\n    \"social\": {\n      \"twitter\": \"https://twitter.com/storyspark\",\n      \"linkedin\": \"https://linkedin.com/in/storyspark\"\n    }\n  }\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/user/update", "host": ["{{base_url}}"], "path": ["{{api_path}}", "user", "update"] },
+            "description": "Profile edit form — all fields optional."
+          }
+        },
+        {
+          "name": "Follow / Unfollow Writer",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/user/follow/{{author_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "user", "follow", "{{author_id}}"] }, "description": "Follow toggle on writer cards." }
+        },
+        {
+          "name": "Get Follow Status",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/user/follow-status/{{author_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "user", "follow-status", "{{author_id}}"] }, "description": "Follow button initial state." }
+        },
+        {
+          "name": "Apply for Writer",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/user/apply-for-writer", "host": ["{{base_url}}"], "path": ["{{api_path}}", "user", "apply-for-writer"] }, "description": "Become-a-writer CTA." }
+        },
+        {
+          "name": "Submit Writer Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"portfolioLink\": \"https://demo-writer.medium.com\",\n  \"reason\": \"I have published 20 short stories and want to contribute to Story Spark AI.\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/writer-applications", "host": ["{{base_url}}"], "path": ["{{api_path}}", "writer-applications"] },
+            "description": "Writer application form (portfolio URL + reason)."
+          }
+        },
+        {
+          "name": "Get Dashboard Analysis",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analysis/dashboard", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analysis", "dashboard"] }, "description": "Dashboard analysis widgets." }
+        },
+        {
+          "name": "Analytics — Overview",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/overview", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "overview"] }, "description": "Analytics page — headline numbers." }
+        },
+        {
+          "name": "Analytics — Heatmap",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/heatmap", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "heatmap"] }, "description": "Writing activity heatmap." }
+        },
+        {
+          "name": "Analytics — Genre Distribution",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/genres", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "genres"] }, "description": "Genre pie chart." }
+        },
+        {
+          "name": "Analytics — Word Cloud",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/wordcloud", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "wordcloud"] }, "description": "Word cloud widget." }
+        },
+        {
+          "name": "Analytics — Productive Hours",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/productive-hours", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "productive-hours"] }, "description": "Most productive writing hours." }
+        },
+        {
+          "name": "Analytics — Emotion Distribution",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/emotion-distribution", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "emotion-distribution"] }, "description": "Emotion breakdown chart." }
+        },
+        {
+          "name": "Analytics — Mood Timeline",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/analytics/mood-timeline", "host": ["{{base_url}}"], "path": ["{{api_path}}", "analytics", "mood-timeline"] }, "description": "Mood over time chart." }
+        },
+        {
+          "name": "Get Recommendations",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/recommendations/personalized", "host": ["{{base_url}}"], "path": ["{{api_path}}", "recommendations", "personalized"] }, "description": "For-you stories row." }
+        },
+        {
+          "name": "Get Notifications",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/notifications", "host": ["{{base_url}}"], "path": ["{{api_path}}", "notifications"] }, "description": "Notification bell dropdown (also pushed live via Socket.IO)." }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/notifications/{{notification_id}}/read", "host": ["{{base_url}}"], "path": ["{{api_path}}", "notifications", "{{notification_id}}", "read"] }, "description": "Mark one notification read." }
+        },
+        {
+          "name": "Get Story Versions",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/story/{{story_id}}/versions", "host": ["{{base_url}}"], "path": ["{{api_path}}", "story", "{{story_id}}", "versions"] }, "description": "Version history panel." }
+        },
+        {
+          "name": "Restore Story Version",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/story/version/versionId/restore", "host": ["{{base_url}}"], "path": ["{{api_path}}", "story", "version", "versionId", "restore"] }, "description": "Restore a snapshot — replace `versionId` with a real version id." }
+        }
+      ]
+    },
+    {
+      "name": "Bookmarks & Payments",
+      "description": "Saved stories and pro-plan checkout.",
+      "item": [
+        {
+          "name": "Toggle Bookmark",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/bookmarks/{{story_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "bookmarks", "{{story_id}}"] }, "description": "BookmarkButton component." }
+        },
+        {
+          "name": "Get My Bookmarks",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/bookmarks", "host": ["{{base_url}}"], "path": ["{{api_path}}", "bookmarks"] }, "description": "Bookmarks page." }
+        },
+        {
+          "name": "Check Bookmark Status",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/bookmarks/status/{{story_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "bookmarks", "status", "{{story_id}}"] }, "description": "Bookmark icon state on cards." }
+        },
+        {
+          "name": "Delete Bookmark",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "{{access_token}}" }], "url": { "raw": "{{base_url}}{{api_path}}/bookmarks/{{story_id}}", "host": ["{{base_url}}"], "path": ["{{api_path}}", "bookmarks", "{{story_id}}"] }, "description": "Remove from saved stories." }
+        },
+        {
+          "name": "Create Payment Order (Razorpay)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 499\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/payment/create-order", "host": ["{{base_url}}"], "path": ["{{api_path}}", "payment", "create-order"] },
+            "description": "Pricing page → Razorpay checkout. Amount in INR."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const j = pm.response.json();",
+            "if (j?.order?.id) pm.collectionVariables.set('order_id', j.order.id);"
+          ] } }]
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"razorpay_order_id\": \"{{order_id}}\",\n  \"razorpay_payment_id\": \"pay_TEST123456789\",\n  \"razorpay_signature\": \"<hmac-sha256-signature>\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/payment/verify", "host": ["{{base_url}}"], "path": ["{{api_path}}", "payment", "verify"] },
+            "description": "Checkout success handler — HMAC signature check."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Community Pages (Contact · Report · Bug · Newsletter)",
+      "description": "Footer and support surfaces.",
+      "item": [
+        {
+          "name": "Contact / Feedback Form",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullname\": \"Demo Writer\",\n  \"email\": \"demo@storyspark.ai\",\n  \"feedbackType\": \"feature-request\",\n  \"subject\": \"Collaborative writing rooms\",\n  \"message\": \"It would be amazing to co-write stories in real time with friends.\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/contact", "host": ["{{base_url}}"], "path": ["{{api_path}}", "contact"] },
+            "description": "Contact page. Types: bug-report / feature-request / general-feedback."
+          }
+        },
+        {
+          "name": "Report a Story / Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"targetId\": \"<post-or-comment-id>\",\n  \"targetType\": \"POST\",\n  \"reason\": \"SPAM\",\n  \"description\": \"This story is copy-pasted advertising.\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/reports", "host": ["{{base_url}}"], "path": ["{{api_path}}", "reports"] },
+            "description": "Report dialog. targetType: POST / COMMENT. reason: SPAM / HATE_SPEECH / INAPPROPRIATE / MISINFORMATION / OTHER."
+          }
+        },
+        {
+          "name": "Submit Bug Report",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Story editor loses draft on refresh\",\n  \"category\": \"Editor\",\n  \"severity\": \"High\",\n  \"description\": \"Draft text disappears when the page reloads before saving.\",\n  \"steps\": \"1. Type a story\\n2. Refresh the page\\n3. Draft is gone\",\n  \"expected\": \"Draft should persist locally until saved.\",\n  \"actual\": \"Draft is cleared on refresh.\",\n  \"email\": \"demo@storyspark.ai\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/bug-reports/submit", "host": ["{{base_url}}"], "path": ["{{api_path}}", "bug-reports", "submit"] },
+            "description": "Report-a-bug form (also files a GitHub issue server-side)."
+          }
+        },
+        {
+          "name": "Newsletter Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"reader@example.com\",\n  \"name\": \"Avid Reader\",\n  \"source\": \"footer\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}{{api_path}}/newsletter/subscribe", "host": ["{{base_url}}"], "path": ["{{api_path}}", "newsletter", "subscribe"] },
+            "description": "Footer newsletter box. Duplicates → 409."
+          }
+        }
+      ]
+    }
+  ]
+}
