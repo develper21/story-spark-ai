@@ -60,7 +60,8 @@ describe("AiModelService", () => {
       100,
       1,
       "Spanish",
-      expect.anything()
+      expect.anything(),
+      undefined
     );
   });
 
