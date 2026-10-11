@@ -1,0 +1,50 @@
+name: CI - Pipeline
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Install, lint, test, and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install backend and frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint backend
+        run: pnpm --filter story-spark-ai-backend lint
+
+      - name: Lint frontend
+        run: pnpm --filter story-spark-ai-frontend lint
+
+      - name: Test backend
+        run: pnpm --filter story-spark-ai-backend test
+
+      - name: Test frontend
+        run: pnpm --filter story-spark-ai-frontend test
+
+      - name: Build backend
+        run: pnpm --filter story-spark-ai-backend build
+
+      - name: Build frontend
+        run: pnpm --filter story-spark-ai-frontend build
