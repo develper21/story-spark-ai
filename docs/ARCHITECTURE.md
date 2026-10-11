@@ -1,221 +1,155 @@
-# 🏗️ StorySparkAI – Architecture Overview
+# 🏛️ System Architecture
 
-This document explains how StorySparkAI's components fit together. It's written for new contributors who want to understand the system before diving into the code.
+## Story Spark AI — AI-Powered Storytelling Platform
+
+This document describes the overall system architecture, technology stack, folder structure, data flow, and key design decisions for the **Story Spark AI** application.
 
 ---
 
-## 🗺️ System Architecture Diagram
+## 1. High-Level Architecture
 
-```mermaid
-flowchart TD
-    subgraph Client["🖥️ Client"]
-        U([👤 User])
-    end
+Story Spark AI follows a **client–server architecture** using a React (Vite) SPA and a Node.js/Express API with MongoDB, plus an AI services layer.
 
-    subgraph Frontend["⚛️ Frontend — React + Vite + TypeScript · port 4001"]
-        UI_HOME["Landing Page"]
-        UI_GEN["Story Generator\n(prompt input + AI output)"]
-        UI_HIST["Bookmarks / History"]
-        UI_AUTH["Login / Register\n(JWT + Google OAuth)"]
-        VITE_API["VITE_BASE_URL\nAPI client"]
-        VITE_SOCK["VITE_SOCKET_URL\nSocket.IO client"]
-    end
-
-    subgraph Backend["⚙️ Backend — Node.js + Express · port 5000"]
-        direction TB
-        ROUTES["REST Routes\n/api/v1/auth · /api/v1/stories\n/api/v1/users · /api/v1/ai"]
-        JWT_MW["JWT Middleware\nAccess + Refresh tokens"]
-        CTRL["Controllers\nauth · story · ai · user"]
-        SOCK_SRV["Socket.IO Server\nReal-time notifications"]
-    end
-
-    subgraph AI["🤖 AI Layer"]
-        OPENAI["OpenAI API\n(story generation)"]
-        GEMINI["Google Gemini API\n(story generation)"]
-        UNSPLASH["Unsplash API\n(story cover images)"]
-    end
-
-    subgraph DB["🗄️ Database — MongoDB + Mongoose"]
-        M_USER["User model\n(auth · profile · OAuth)"]
-        M_STORY["Story model\n(prompt · variations · status)"]
-        M_BOOKMARK["Bookmark model\n(saved stories)"]
-    end
-
-    subgraph Auth["🔐 Auth Providers"]
-        GOOGLE["Google OAuth 2.0"]
-        SMTP["SMTP\n(email verification)"]
-    end
-
-    %% User → Frontend
-    U --> UI_HOME & UI_GEN & UI_HIST & UI_AUTH
-
-    %% Frontend → Backend
-    UI_HOME & UI_GEN & UI_HIST & UI_AUTH --> VITE_API
-    VITE_API -->|"HTTP REST"| ROUTES
-    VITE_SOCK <-->|"WebSocket"| SOCK_SRV
-
-    %% Backend internal
-    ROUTES --> JWT_MW --> CTRL
-    CTRL --> SOCK_SRV
-
-    %% Backend → AI
-    CTRL -->|"story generation"| OPENAI & GEMINI
-    CTRL -->|"cover images"| UNSPLASH
-
-    %% Backend → DB
-    CTRL -->|"Mongoose ODM"| M_USER & M_STORY & M_BOOKMARK
-
-    %% Auth flows
-    UI_AUTH -->|"OAuth flow"| GOOGLE --> CTRL
-    CTRL -->|"verification email"| SMTP
-
-    %% Styling
-    classDef userNode fill:#4f46e5,color:#fff,stroke:none
-    classDef feNode fill:#0ea5e9,color:#fff,stroke:none
-    classDef beNode fill:#059669,color:#fff,stroke:none
-    classDef aiNode fill:#d97706,color:#fff,stroke:none
-    classDef dbNode fill:#7c3aed,color:#fff,stroke:none
-    classDef authNode fill:#db2777,color:#fff,stroke:none
-
-    class U userNode
-    class UI_HOME,UI_GEN,UI_HIST,UI_AUTH,VITE_API,VITE_SOCK feNode
-    class ROUTES,JWT_MW,CTRL,SOCK_SRV beNode
-    class OPENAI,GEMINI,UNSPLASH aiNode
-    class M_USER,M_STORY,M_BOOKMARK dbNode
-    class GOOGLE,SMTP authNode
+```
+┌────────────┐      HTTPS       ┌──────────────────┐      HTTPS       ┌──────────────┐
+│    User    │ ◄──────────────► │  React Frontend  │ ◄──────────────► │   Node.js    │
+│ (Web Brows)│                  │   (Vite :4001)   │                  │   Backend    │
+└────────────┘                  └──────────────────┘                  │  (:5000)     │
+                                                                      └──────┬───────┘
+                                    WebSocket (Socket.IO)                    │
+                                  ◄──────────────────────────────────────────┤
+                                                                     ┌───────▼────────┐
+                                                                     │    MongoDB     │
+                                                                     │   (Mongoose)   │
+                                                                     └────────────────┘
+                                              ┌──────────────────────┬───────┴────────┐
+                                              ▼                      ▼                ▼
+                                        ┌──────────┐         ┌────────────┐   ┌───────────┐
+                                        │ OpenAI / │         │  Unsplash  │   │ Razorpay  │
+                                        │  Gemini  │         │  (covers)  │   │ (payments)│
+                                        └──────────┘         └────────────┘   └───────────┘
 ```
 
----
-
-## 🧱 Layer-by-Layer Breakdown
-
-### 1. ⚛️ Frontend — `frontend/`
-React + Vite + TypeScript SPA running on port **4001**.
-
-- **`VITE_BASE_URL`** — points to the backend REST API (`http://localhost:5000/api/v1`)
-- **`VITE_SOCKET_URL`** — points to the Socket.IO server for real-time notifications
-- **`VITE_GOOGLE_CLIENT_ID`** — used for Google OAuth login on the client side
-
-Key pages:
-| Page | Purpose |
-|---|---|
-| Landing | Introduction and entry point |
-| Story Generator | Prompt input, AI story output, multiple variations |
-| Bookmarks / History | Saved and previously generated stories |
-| Login / Register | JWT auth + Google OAuth |
+- **Frontend → Backend:** REST over HTTP (`/api/v1/*`) with JWT in the `Authorization` header (raw token, no `Bearer` prefix).
+- **Backend → Frontend (realtime):** Socket.IO pushes notifications and collab events to room `user:<id>`.
+- **Backend → Services:** OpenAI/Gemini for generation, Unsplash for cover images, Razorpay for checkout, SMTP for OTP emails.
 
 ---
 
-### 2. ⚙️ Backend — `backend/`
-Node.js + Express REST API running on port **5000** (configurable via `PORT`).
+## 2. Technology Stack
 
-**Request lifecycle:**
-```
-REST Route → JWT Middleware → Controller → DB / AI / Socket.IO
-```
+Technologies used in the project and their purpose.
 
-Key route groups:
-
-| Route prefix | Handles |
-|---|---|
-| `/api/v1/auth` | Register, login, refresh token, Google OAuth, email verify |
-| `/api/v1/stories` | Create, read, bookmark, delete stories |
-| `/api/v1/ai` | AI generation, analysis, critique |
-| `/api/v1/users` | User profile management |
-
----
-
-### 3. 🔐 Auth & Security
-Two-token JWT strategy:
-
-| Token | Env var | Purpose |
+| Layer | Technology | Purpose |
 |---|---|---|
-| Access token | `JWT_SECRET` + `JWT_EXPIRES_IN` | Short-lived API access |
-| Refresh token | `JWT_REFRESH_SECRET` + `JWT_REFRESH_EXPIRES_IN` | Long-lived session renewal |
-
-Password hashing uses **bcrypt** (`SALT_ROUNDS`). Google OAuth is handled via `GOOGLE_CLIENT_ID` on both frontend and backend. Email verification uses SMTP (`VERIFY_EMAIL` + `VERIFY_PASSWORD`).
-
----
-
-### 4. 🤖 AI Layer
-StorySparkAI supports two AI providers — switchable via environment variables:
-
-| Provider | Env var | Used for |
-|---|---|---|
-| OpenAI | `OPEN_AI_KEY` | Story generation + analysis |
-| Google Gemini | `GEMINI_API_KEY` | Story generation + analysis |
-| Unsplash | `UNSPLASH_KEY_API` | Story cover image fetching |
-
-AI is used **only** for generation and analysis — all story data, user data, and bookmarks are stored in MongoDB.
+| Frontend | React 19 + Vite 6 (TypeScript) | UI framework and dev server (port 4001) |
+| Styling | Tailwind CSS | Modern, responsive UI (see `DESIGN.md`) |
+| State | Redux Toolkit | Client state management |
+| Backend | Node.js 20 + Express 4 (TypeScript) | REST API and business logic (port 5000) |
+| Database | MongoDB + Mongoose | Data persistence |
+| Realtime | Socket.IO | Notifications + collaborative sessions |
+| Authentication | JWT (access + refresh) & Google OAuth | Session management, protected routes |
+| AI | OpenAI + Google Gemini | Story generation, remix, translate |
+| Images | Unsplash API | Story cover images |
+| Payments | Razorpay | Pro-plan checkout + signature verification |
+| Email | SMTP (nodemailer) | OTP and newsletter emails |
+| Validation | Zod | Request body validation on all routes |
+| Deployment | Netlify (FE) · Vercel/Render (BE) | Hosting and deployment |
+| Version Control | Git + GitHub | Source code management |
 
 ---
 
-### 5. 🗄️ Database — MongoDB + Mongoose — `backend/`
+## 3. Folder Structure
 
-| Model | Stores |
-|---|---|
-| `User` | Email, hashed password, Google OAuth ID, roles, verification status |
-| `Story` | Prompt, AI-generated variations, cover image, author reference |
-| `Bookmark` | User–Story reference for saved stories |
+The project follows a **module-based folder structure** (backend) and a **component-based structure** (frontend) to keep the code organized and scalable.
 
----
+```
+story-spark-ai/
+├── frontend/                       # React SPA (Vite + TypeScript)
+│   └── src/
+│       ├── components/             # UI components (pages, layout, dashboard…)
+│       ├── services/               # API service helpers (auth, continuation)
+│       ├── helpers/axios/          # Axios instance + JWT header injection
+│       ├── redux/                  # Store, slices, thunks
+│       ├── hooks/                  # Custom hooks (useNotifications…)
+│       ├── socket/                 # Socket.IO client wiring
+│       ├── models/ · types/        # TS interfaces & models
+│       ├── utils/ · constants/     # Utilities and constants
+│       └── App.tsx · main.tsx      # Entry points
+│
+├── backend/                        # Express API (TypeScript)
+│   └── src/
+│       ├── server.ts               # HTTP + Socket.IO bootstrap, DB connect
+│       ├── app.ts                  # Express app: CORS, helmet, rate limit, routes
+│       ├── config/                 # Env config, Razorpay config
+│       ├── router/                 # Mounts every module router at /api/v1
+│       ├── routes/                 # Standalone routes (stories, continuation)
+│       ├── app/
+│       │   ├── middleware/         # auth, validate (Zod), rate limiters, error handler
+│       │   └── modules/            # ⭐ One folder per feature module
+│       │       ├── auth/           # router · controller · service · validation
+│       │       ├── user/ · post/ · comment/ · review/ · reaction/
+│       │       ├── ai_model/ · story_version/ · bookmark/ · notification/
+│       │       ├── analytics/ · analysis/ · recommendation/
+│       │       ├── newsletter/ · contact/ · report/ · bug_report/
+│       │       ├── verify_email/ · writer_application/ · story_inspiration/
+│       │       └── payment (src/controllers + src/router)
+│       ├── enums/ · interfaces/    # Shared enums and TS types
+│       ├── errors/ · shared/       # ApiError, catchAsync, sendResponse
+│       └── socket/                 # notification + collab socket handlers
+│
+├── postman/                        # ⭐ Master Postman collection (all routes)
+├── frontend/postman/               # Frontend-facing collection (65 requests)
+├── backend/postman/                # Server-side collection (95 requests, negative tests)
+└── docs/                           # PRD · ARCHITECTURE · RULES · DESIGN · TASKS · MEMORY
+```
 
-### 6. 🔔 Real-Time — Socket.IO
-The backend runs a Socket.IO server for real-time notifications (story generation updates, etc.).
+**Backend module anatomy** — every feature module follows the same shape, which keeps the codebase predictable:
 
-- Frontend connects via `VITE_SOCKET_URL` using the logged-in user's access token
-- **Do not** point `VITE_SOCKET_URL` at Vercel — serverless functions cannot maintain persistent WebSocket connections
-
----
-
-## 📂 Key Files for New Contributors
-
-| What you're working on | Start here |
-|---|---|
-| Adding a new API endpoint | `backend/src/routes/` → `backend/src/controllers/` |
-| Changing auth logic | `backend/src/middleware/` (JWT) |
-| Modifying DB schema | `backend/src/models/` |
-| Switching AI provider | `backend/src/controllers/ai*` + `.env` keys |
-| Frontend UI changes | `frontend/src/` pages and components |
-| Real-time notifications | Socket.IO setup in `backend/src/` + `VITE_SOCKET_URL` |
-| Environment config | `backend/.env.example` · `frontend/.env.example` |
-
----
-
-## ⚙️ Local Setup (Quick Reference)
-
-```bash
-# 1. Clone and install (npm workspaces — single install)
-git clone https://github.com/<your-username>/story-spark-ai.git
-cd story-spark-ai
-npm install
-
-# 2. Set up environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-# Fill in DATABASE_URL, JWT secrets, AI keys, VITE_BASE_URL
-
-# 3. Run both frontend and backend
-npm run dev
-# Frontend → http://localhost:4001
-# Backend  → http://localhost:5000
+```
+app/modules/<feature>/
+├── <feature>.router.ts        # Route definitions + middleware chain
+├── <feature>.controller.ts    # Request/response handling (catchAsync)
+├── <feature>.service.ts       # Business logic
+├── <feature>.model.ts         # Mongoose schema
+├── <feature>.validation.ts    # Zod schemas (validated in middleware)
+└── <feature>.interface.ts     # TS types
 ```
 
 ---
 
-## 🌐 Deployment (Vercel)
+## 4. Request Flow
 
-Two separate Vercel projects from the same monorepo:
-
-| Project | Root directory |
-|---|---|
-| Frontend | `frontend/` |
-| Backend API | `backend/` |
-
-> Socket.IO **cannot** run on Vercel serverless. Use a persistent host (e.g. Render) for `VITE_SOCKET_URL`.
+1. Client sends `POST /api/v1/auth/login` with JSON body.
+2. `app.ts` applies **helmet → rate limit (100/15min) → CORS → JSON parsing → cookie parser**.
+3. `router/index.ts` matches `/auth` → `auth.router.ts`.
+4. `loginRateLimiter` → `validateRequest(UserValidator.login)` (Zod) → `AuthController.login`.
+5. Controller calls `AuthService.login` → verifies password (bcrypt) → signs JWT access + refresh tokens.
+6. Refresh token is set as an **httpOnly cookie**; access token returns in the response body.
+7. Subsequent requests carry `Authorization: <accessToken>` (raw), verified by `auth.middleware.ts` (also checks `tokenVersion` to invalidate old sessions).
+8. Global error handler converts thrown `ApiError`s into the standard envelope:
+   `{ success, statusCode, message, data }`.
+9. Unknown routes fall through to the global 404 handler.
 
 ---
 
-> **Core rule while contributing:**
-> The AI layer is **advisory and generative only** — it never stores data directly.
-> All persistence goes through the Express controllers → Mongoose → MongoDB.
+## 5. Key Design Decisions
+
+- **Module-per-feature** — each domain (auth, post, ai_model…) is fully self-contained, making GSSoC-style multi-contributor work safe and parallel.
+- **Raw JWT header (no Bearer prefix)** — the axios instance sends the token as-is; Postman collections mirror this exactly.
+- **Dual AI tiers** — quota-monitored premium endpoints (`checkRequestLimit`) and IP-rate-limited free endpoints (`freeAiRateLimiter`) so anonymous visitors can try the product.
+- **Quota + cron reset** — monthly request counters reset via a scheduled cron job (skipped on serverless).
+- **Defense-in-depth authorization** — role checks in middleware *and* controller (e.g. writer approval).
+- **Soft deletes** — posts use `isDeleted` flags to keep feeds recoverable.
+- **Streaming first-class** — `text/event-stream` generation endpoint for progressive UI.
+
+---
+
+## 6. Related Docs
+
+- [PRD.md](./PRD.md) — product requirements and scope.
+- [DESIGN.md](./DESIGN.md) — visual design system, colors, typography.
+- [RULES.md](./RULES.md) — development rules and coding standards.
+- [TASKS.md](./TASKS.md) — task breakdown by phase.
+- [MEMORY.md](./MEMORY.md) — project state and continuity notes.
+- [../postman/postman.json](../postman/postman.json) — complete API collection.
