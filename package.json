@@ -27,7 +27,12 @@
     "build:frontend": "npm run build -w story-spark-ai-frontend",
     "start:backend": "npm run start -w story-spark-ai-backend",
     "start:frontend": "npm run start -w story-spark-ai-frontend",
-    "lint": "npm run lint -w story-spark-ai-frontend"
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "npm run lint -w story-spark-ai-backend",
+    "lint:frontend": "npm run lint -w story-spark-ai-frontend",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run test -w story-spark-ai-backend",
+    "test:frontend": "npm run test -w story-spark-ai-frontend"
   },
   "packageManager": "pnpm@9.15.9",
   "devDependencies": {
